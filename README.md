@@ -30,11 +30,11 @@ pi install git:github.com/imranshaiedi-byte/pi-meron-ui
 
 ## Theme
 
-Includes a **One Dark** theme. Select it via `/settings` → Theme, or in `~/.pi/agent/settings.json`:
+Includes a **meron-custom** theme. Select it via `/settings` → Theme, or in `~/.pi/agent/settings.json`:
 
 ```json
 {
-  "theme": "one-dark"
+  "theme": "meron-custom"
 }
 ```
 
@@ -45,6 +45,17 @@ Includes a **One Dark** theme. Select it via `/settings` → Theme, or in `~/.pi
 | Tool error bg | Dark red tint |
 | Tool pending bg | Cool dark |
 | User message bg | Subtle grey |
+
+Thinking level borders follow a cool→warm progression:
+
+| Level | Color | Hex |
+|-------|-------|-----|
+| off | Steel grey | #4b5263 |
+| minimal | Blue | #61afef |
+| low | Purple | #8b5cf6 |
+| medium | Magenta | #c678dd |
+| high | Amber | #e5a55b |
+| xhigh | Red | #ef4444 |
 
 ## License
 
