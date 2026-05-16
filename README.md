@@ -27,11 +27,7 @@ Single-row padded footer (3-space left/right padding):
 ### Via pi install (recommended)
 
 ```bash
-# From a local git repo
-pi install ~/pi-meron-ui
-
-# From GitHub (once pushed)
-pi install github.com/user/pi-meron-ui
+pi install git:github.com/imranshaiedi-byte/pi-meron-ui
 ```
 
 ### Manual
