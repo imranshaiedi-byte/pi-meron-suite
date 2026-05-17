@@ -1,0 +1,78 @@
+{
+	"$schema": "https://raw.githubusercontent.com/earendil-works/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+	"name": "meron-soft",
+	"vars": {
+		"accent": "#f4a261",
+		"red": "#ff0000",
+		"green": "#00ff00",
+		"warmGrey": "#a8a29e",
+		"dimGrey": "#78716c",
+		"darkGrey": "#57534e",
+		"darkerGrey": "#44403c",
+		"userBg": "#1c1917"
+	},
+	"colors": {
+		"accent": "accent",
+		"border": "darkGrey",
+		"borderAccent": "accent",
+		"borderMuted": "darkerGrey",
+		"success": "green",
+		"error": "red",
+		"warning": "accent",
+		"muted": "warmGrey",
+		"dim": "dimGrey",
+		"text": "",
+		"thinkingText": "warmGrey",
+
+		"selectedBg": "#292524",
+		"userMessageBg": "userBg",
+		"userMessageText": "",
+		"customMessageBg": "#231f1e",
+		"customMessageText": "",
+		"customMessageLabel": "accent",
+		"toolPendingBg": "",
+		"toolSuccessBg": "",
+		"toolErrorBg": "",
+		"toolTitle": "",
+		"toolOutput": "",
+
+		"mdHeading": "accent",
+		"mdLink": "accent",
+		"mdLinkUrl": "dimGrey",
+		"mdCode": "accent",
+		"mdCodeBlock": "",
+		"mdCodeBlockBorder": "darkGrey",
+		"mdQuote": "warmGrey",
+		"mdQuoteBorder": "darkGrey",
+		"mdHr": "darkGrey",
+		"mdListBullet": "accent",
+
+		"toolDiffAdded": "green",
+		"toolDiffRemoved": "red",
+		"toolDiffContext": "warmGrey",
+
+		"syntaxComment": "dimGrey",
+		"syntaxKeyword": "",
+		"syntaxFunction": "",
+		"syntaxVariable": "",
+		"syntaxString": "accent",
+		"syntaxNumber": "accent",
+		"syntaxType": "",
+		"syntaxOperator": "",
+		"syntaxPunctuation": "dimGrey",
+
+		"thinkingOff": "darkerGrey",
+		"thinkingMinimal": "dimGrey",
+		"thinkingLow": "warmGrey",
+		"thinkingMedium": "accent",
+		"thinkingHigh": "red",
+		"thinkingXhigh": "red",
+
+		"bashMode": "accent"
+	},
+	"export": {
+		"pageBg": "#0c0a09",
+		"cardBg": "#1c1917",
+		"infoBg": "#231f1e"
+	}
+}
