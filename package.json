@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Clean padded status bar footer for pi",
   "pi": {
-    "extensions": ["./index.ts"]
+    "extensions": ["./index.ts"],
+    "themes": ["./themes"]
   },
   "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar"],
-  "files": ["index.ts"]
+  "files": ["index.ts", "themes"]
 }
