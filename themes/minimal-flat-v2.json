@@ -1,0 +1,79 @@
+{
+  "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+  "name": "minimal-flat-v2",
+  "vars": {
+    "bg": "#000000",
+    "surface": "#141414",
+    "elevated": "#262626",
+    "highlight": "#3a3a3a",
+    "muted": "#555555",
+    "dim": "#999999",
+    "white": "#eeeeee",
+    "green": "#4ade80",
+    "red": "#f87171"
+  },
+  "colors": {
+    "accent": "dim",
+    "border": "elevated",
+    "borderAccent": "muted",
+    "borderMuted": "surface",
+    "success": "green",
+    "error": "red",
+    "warning": "dim",
+    "muted": "muted",
+    "dim": "dim",
+    "text": "white",
+    "thinkingText": "muted",
+
+    "selectedBg": "highlight",
+    "userMessageBg": "surface",
+    "userMessageText": "white",
+    "customMessageBg": "surface",
+    "customMessageText": "white",
+    "customMessageLabel": "dim",
+    "toolPendingBg": "surface",
+    "toolSuccessBg": "surface",
+    "toolErrorBg": "surface",
+    "toolTitle": "white",
+    "toolOutput": "muted",
+
+    "mdHeading": "white",
+    "mdLink": "dim",
+    "mdLinkUrl": "muted",
+    "mdCode": "dim",
+    "mdCodeBlock": "white",
+    "mdCodeBlockBorder": "elevated",
+    "mdQuote": "muted",
+    "mdQuoteBorder": "elevated",
+    "mdHr": "elevated",
+    "mdListBullet": "dim",
+
+    "toolDiffAdded": "green",
+    "toolDiffRemoved": "red",
+    "toolDiffContext": "muted",
+
+    "syntaxComment": "muted",
+    "syntaxKeyword": "white",
+    "syntaxFunction": "dim",
+    "syntaxVariable": "white",
+    "syntaxString": "dim",
+    "syntaxNumber": "white",
+    "syntaxType": "dim",
+    "syntaxOperator": "muted",
+    "syntaxPunctuation": "muted",
+
+    "thinkingOff": "bg",
+    "thinkingMinimal": "surface",
+    "thinkingLow": "elevated",
+    "thinkingMedium": "muted",
+    "thinkingHigh": "dim",
+    "thinkingXhigh": "white",
+
+    "bashMode": "dim"
+  },
+  "export": {
+    "pageBg": "#000000",
+    "cardBg": "#141414",
+    "infoBg": "#262626"
+  }
+}
