@@ -1,0 +1,78 @@
+{
+  "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+  "name": "minimal-flat-bright",
+  "vars": {
+    "white": "#ffffff",
+    "surface": "#f5f5f5",
+    "elevated": "#e8e8e8",
+    "muted": "#888888",
+    "dim": "#555555",
+    "black": "#1a1a1a",
+    "green": "#16a34a",
+    "red": "#dc2626"
+  },
+  "colors": {
+    "accent": "dim",
+    "border": "surface",
+    "borderAccent": "muted",
+    "borderMuted": "surface",
+    "success": "green",
+    "error": "red",
+    "warning": "dim",
+    "muted": "muted",
+    "dim": "dim",
+    "text": "black",
+    "thinkingText": "muted",
+
+    "selectedBg": "elevated",
+    "userMessageBg": "surface",
+    "userMessageText": "black",
+    "customMessageBg": "surface",
+    "customMessageText": "black",
+    "customMessageLabel": "dim",
+    "toolPendingBg": "surface",
+    "toolSuccessBg": "surface",
+    "toolErrorBg": "surface",
+    "toolTitle": "black",
+    "toolOutput": "muted",
+
+    "mdHeading": "black",
+    "mdLink": "dim",
+    "mdLinkUrl": "muted",
+    "mdCode": "dim",
+    "mdCodeBlock": "black",
+    "mdCodeBlockBorder": "surface",
+    "mdQuote": "muted",
+    "mdQuoteBorder": "surface",
+    "mdHr": "surface",
+    "mdListBullet": "dim",
+
+    "toolDiffAdded": "green",
+    "toolDiffRemoved": "red",
+    "toolDiffContext": "muted",
+
+    "syntaxComment": "muted",
+    "syntaxKeyword": "black",
+    "syntaxFunction": "black",
+    "syntaxVariable": "black",
+    "syntaxString": "black",
+    "syntaxNumber": "black",
+    "syntaxType": "black",
+    "syntaxOperator": "muted",
+    "syntaxPunctuation": "muted",
+
+    "thinkingOff": "surface",
+    "thinkingMinimal": "surface",
+    "thinkingLow": "muted",
+    "thinkingMedium": "dim",
+    "thinkingHigh": "dim",
+    "thinkingXhigh": "dim",
+
+    "bashMode": "dim"
+  },
+  "export": {
+    "pageBg": "#ffffff",
+    "cardBg": "#f5f5f5",
+    "infoBg": "#e8e8e8"
+  }
+}
