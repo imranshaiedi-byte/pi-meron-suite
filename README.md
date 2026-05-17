@@ -28,13 +28,20 @@ pi install git:github.com/imranshaiedi-byte/pi-meron-ui
 
 ## Theme
 
-Includes a **meron-custom** theme. Select it via `/settings` → Theme, or in `~/.pi/agent/settings.json`:
+Includes these themes. Select one via `/settings` → Theme, or in `~/.pi/agent/settings.json`:
 
 ```json
 {
-  "theme": "meron-custom"
+  "theme": "meron-graphite"
 }
 ```
+
+| Theme | Feel |
+|-------|------|
+| `meron-custom` | Original custom palette |
+| `meron-graphite` | Neutral graphite, high-legibility, restrained cyan accent |
+| `meron-nord` | Cool blue/grey Nord-inspired palette |
+| `meron-tokyo` | Vibrant Tokyo Night-inspired palette |
 
 | Element | Color |
 |---------|-------|
@@ -42,6 +49,8 @@ Includes a **meron-custom** theme. Select it via `/settings` → Theme, or in `~
 | Tool success bg | Transparent/default terminal bg |
 | Tool error bg | Transparent/default terminal bg |
 | Tool pending bg | Transparent/default terminal bg |
+| Diff added | Standard green #00ff00 |
+| Diff removed | Standard red #ff0000 |
 | User message bg | Subtle grey |
 
 Thinking level borders follow a cool→warm progression:
