@@ -3,13 +3,13 @@
   "name": "grayscale-v3",
   "vars": {
     "bg": "#000000",
-    "surface": "#141414",
-    "elevated": "#303030",
-    "highlight": "#5a5a5a",
-    "border": "#484848",
-    "borderStrong": "#909090",
-    "muted": "#808080",
-    "dim": "#d8d8d8",
+    "surface": "#080808",
+    "elevated": "#383838",
+    "highlight": "#707070",
+    "border": "#606060",
+    "borderStrong": "#b8b8b8",
+    "muted": "#989898",
+    "dim": "#eeeeee",
     "text": "#ffffff",
     "green": "#00ff00",
     "red": "#ff0000"
@@ -69,7 +69,7 @@
   },
   "export": {
     "pageBg": "#000000",
-    "cardBg": "#141414",
-    "infoBg": "#303030"
+    "cardBg": "#080808",
+    "infoBg": "#383838"
   }
 }
