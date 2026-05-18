@@ -1074,14 +1074,13 @@ function readThemeAnsi(theme: DiffTheme, kind: "fg" | "bg", slot: string): strin
 function resolveContainerBackgroundAnsi(theme: DiffTheme): string | undefined {
 	return readThemeAnsi(theme, "bg", "toolSuccessBg")
 		?? readThemeAnsi(theme, "bg", "toolPendingBg")
-		?? readThemeAnsi(theme, "bg", "toolErrorBg")
-		?? readThemeAnsi(theme, "bg", "userMessageBg");
+		?? readThemeAnsi(theme, "bg", "toolErrorBg");
 }
 
 function resolveDiffPalette(theme: DiffTheme): DiffPalette {
 	const baseBg = parseAnsiColorCode(readThemeAnsi(theme, "bg", "toolSuccessBg"))
 		?? parseAnsiColorCode(readThemeAnsi(theme, "bg", "toolPendingBg"))
-		?? parseAnsiColorCode(readThemeAnsi(theme, "bg", "userMessageBg"))
+		?? parseAnsiColorCode(readThemeAnsi(theme, "bg", "toolErrorBg"))
 		?? { r: 32, g: 35, b: 42 };
 	const addFg = parseAnsiColorCode(readThemeAnsi(theme, "fg", "toolDiffAdded")) ?? { r: 88, g: 173, b: 88 };
 	const removeFg = parseAnsiColorCode(readThemeAnsi(theme, "fg", "toolDiffRemoved")) ?? { r: 196, g: 98, b: 98 };
