@@ -3,7 +3,7 @@
   "name": "grayscale-v4",
   "vars": {
     "bg": "#000000",
-    "surface": "#141414",
+    "surface": "#0c0c0c",
     "toolSurface": "#181818",
     "elevated": "#303030",
     "highlight": "#303030",
@@ -70,7 +70,7 @@
   },
   "export": {
     "pageBg": "#000000",
-    "cardBg": "#141414",
+    "cardBg": "#0c0c0c",
     "infoBg": "#181818"
   }
 }
