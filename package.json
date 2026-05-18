@@ -1,11 +1,12 @@
 {
   "name": "pi-meron-footer",
-  "version": "1.0.0",
-  "description": "Clean padded status bar footer for pi",
+  "version": "1.1.0",
+  "description": "Meron footer plus compact tool display rendering for pi",
+  "type": "module",
   "pi": {
     "extensions": ["./index.ts"],
     "themes": ["./themes"]
   },
-  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar"],
-  "files": ["index.ts", "themes"]
+  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar", "tool-rendering"],
+  "files": ["index.ts", "src", "config", "themes"]
 }
