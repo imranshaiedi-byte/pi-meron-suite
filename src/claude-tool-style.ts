@@ -101,9 +101,9 @@ export function setToolResultStatus(ctx: ToolContextLike | undefined, isError = 
 
 function statusDot(ctx: ToolContextLike | undefined, theme: RenderThemeLike): string {
   const status = getState(ctx)?._toolStatus;
-  if (status === "success") return `${theme.fg("text", "●")} `;
-  if (status === "error") return `${theme.fg("error", "●")} `;
-  return `${theme.fg("muted", "○")} `;
+  if (status === "success") return `${theme.fg("text", "✓")} `;
+  if (status === "error") return `${theme.fg("text", "✗")} `;
+  return `${theme.fg("text", "○")} `;
 }
 
 export function toolHeader(tool: string, summary: string, theme: RenderThemeLike, ctx?: ToolContextLike): string {
