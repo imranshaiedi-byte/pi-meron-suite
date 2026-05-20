@@ -1250,7 +1250,9 @@ export function registerToolDisplayOverrides(
     },
     renderCall(args, theme, context) {
       const command = getStringField(args, "command") ?? "";
-      return styledText(context, toolHeader("Bash", command.replace(/\s+/g, " ").trim().slice(0, 72) || "...", theme, context));
+      const display = command.replace(/\\\s*\n/g, " ").replace(/\s+/g, " ").trim();
+      const summary = context?.expanded ? display : (display.slice(0, 72) || "...");
+      return styledText(context, toolHeader("Bash", summary, theme, context));
     },
     renderResult(result, options, theme, context) {
       const config = getConfig();
