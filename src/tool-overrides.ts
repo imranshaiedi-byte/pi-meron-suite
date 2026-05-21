@@ -272,6 +272,21 @@ function formatBashNoOutputLine(
   return theme.fg("muted", "(no output)");
 }
 
+function takeTailToWidth(text: string, width: number): string {
+  const chars = Array.from(text);
+  let tail = "";
+
+  for (let index = chars.length - 1; index >= 0; index--) {
+    const next = `${chars[index]}${tail}`;
+    if (visibleWidth(next) > width) {
+      break;
+    }
+    tail = next;
+  }
+
+  return tail;
+}
+
 function truncateMiddleToWidth(text: string, width: number): string {
   if (visibleWidth(text) <= width) {
     return text;
@@ -281,8 +296,7 @@ function truncateMiddleToWidth(text: string, width: number): string {
   const headWidth = Math.max(4, Math.floor((safeWidth - 1) * 0.58));
   const tailWidth = Math.max(3, safeWidth - headWidth - 1);
   const head = truncateToWidth(text, headWidth, "");
-  const tailSource = [...text].reverse().join("");
-  const tail = [...truncateToWidth(tailSource, tailWidth, "")].reverse().join("");
+  const tail = takeTailToWidth(text, tailWidth);
   return `${head}…${tail}`;
 }
 
