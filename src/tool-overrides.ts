@@ -334,6 +334,70 @@ function splitCommandChain(command: string): string[] {
     .filter((segment) => segment.length > 0);
 }
 
+const DATABRICKS_GLOBAL_FLAGS_WITH_VALUES = new Set([
+  "-p",
+  "--profile",
+  "-t",
+  "--target",
+  "-o",
+  "--output",
+  "--log-file",
+  "--log-format",
+  "--log-level",
+  "--progress-format",
+]);
+
+const DATABRICKS_GLOBAL_BOOLEAN_FLAGS = new Set([
+  "--debug",
+  "-h",
+  "--help",
+]);
+
+function stripDatabricksGlobalFlags(tokens: string[]): string[] {
+  const cleaned: string[] = [];
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+    if (!token) {
+      continue;
+    }
+
+    if (DATABRICKS_GLOBAL_FLAGS_WITH_VALUES.has(token)) {
+      index++;
+      continue;
+    }
+    if ([...DATABRICKS_GLOBAL_FLAGS_WITH_VALUES].some((flag) => token.startsWith(`${flag}=`))) {
+      continue;
+    }
+    if (DATABRICKS_GLOBAL_BOOLEAN_FLAGS.has(token)) {
+      continue;
+    }
+
+    cleaned.push(token);
+  }
+  return cleaned;
+}
+
+function formatDatabricksCommandLabel(prefix: string, tokens: string[]): string {
+  const args = stripDatabricksGlobalFlags(tokens.slice(1));
+  const group = args[0];
+  const command = args[1];
+  const subcommand = args[2];
+
+  if (!group) {
+    return `${prefix}databricks`;
+  }
+
+  if (group === "account" && command && subcommand) {
+    return `${prefix}databricks account ${command} ${subcommand}`;
+  }
+
+  if (command) {
+    return `${prefix}databricks ${group} ${command}`;
+  }
+
+  return `${prefix}databricks ${group}`;
+}
+
 function commandFlowLabel(segment: string): string {
   const compacted = compactLeadingEnvAssignments(segment).displayCommand;
   const tokens = compacted.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
@@ -342,7 +406,11 @@ function commandFlowLabel(segment: string): string {
   const command = hasEnvPrefix ? tokens[1] ?? first : first;
   const second = hasEnvPrefix ? tokens[2] : tokens[1];
   const prefix = hasEnvPrefix ? `${first} ` : "";
+  const commandTokens = hasEnvPrefix ? tokens.slice(1) : tokens;
 
+  if (command === "databricks") {
+    return formatDatabricksCommandLabel(prefix, commandTokens);
+  }
   if (command === "git" && second) {
     return `${prefix}git ${second}`;
   }
