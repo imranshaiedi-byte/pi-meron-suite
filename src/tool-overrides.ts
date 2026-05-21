@@ -348,9 +348,6 @@ function formatCollapsedBashCommand(
   if (commandLines.length > 1) {
     hints.push(`${commandLines.length} lines`);
   }
-  if (compactedCommand.compacted) {
-    hints.push("env compacted");
-  }
   if (visibleWidth(compactedCommand.displayCommand) > visibleWidth(display)) {
     hints.push("truncated");
   }
