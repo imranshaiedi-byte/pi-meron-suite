@@ -272,32 +272,8 @@ function formatBashNoOutputLine(
   return theme.fg("muted", "(no output)");
 }
 
-function takeTailToWidth(text: string, width: number): string {
-  const chars = Array.from(text);
-  let tail = "";
-
-  for (let index = chars.length - 1; index >= 0; index--) {
-    const next = `${chars[index]}${tail}`;
-    if (visibleWidth(next) > width) {
-      break;
-    }
-    tail = next;
-  }
-
-  return tail;
-}
-
-function truncateMiddleToWidth(text: string, width: number): string {
-  if (visibleWidth(text) <= width) {
-    return text;
-  }
-
-  const safeWidth = Math.max(8, width);
-  const headWidth = Math.max(4, Math.floor((safeWidth - 1) * 0.58));
-  const tailWidth = Math.max(3, safeWidth - headWidth - 1);
-  const head = truncateToWidth(text, headWidth, "");
-  const tail = takeTailToWidth(text, tailWidth);
-  return `${head}…${tail}`;
+function truncateEndToWidth(text: string, width: number): string {
+  return visibleWidth(text) <= width ? text : truncateToWidth(text, width, "...");
 }
 
 function formatCollapsedBashCommand(
@@ -314,7 +290,7 @@ function formatCollapsedBashCommand(
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
   const flattened = rawCommand.replace(/\\\s*\n/g, " ").replace(/\s+/g, " ").trim();
-  const display = truncateMiddleToWidth(flattened, 88);
+  const display = truncateEndToWidth(flattened, 88);
   const hints: string[] = [];
 
   if (commandLines.length > 1) {
