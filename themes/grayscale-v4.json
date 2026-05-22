@@ -63,9 +63,9 @@
     "thinkingOff": "border",
     "thinkingMinimal": "border",
     "thinkingLow": "border",
-    "thinkingMedium": "borderStrong",
-    "thinkingHigh": "borderStrong",
-    "thinkingXhigh": "borderStrong",
+    "thinkingMedium": "border",
+    "thinkingHigh": "border",
+    "thinkingXhigh": "border",
     "bashMode": "text"
   },
   "export": {
