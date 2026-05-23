@@ -31,6 +31,36 @@ type FileReadResult = {
 };
 
 const MAX_PREVIEW_READ_BYTES = 1_000_000;
+const PREVIEW_READ_LIMIT_ENV = "PI_MERON_PREVIEW_READ_LIMIT_BYTES";
+const BINARY_SAMPLE_BYTES = 4096;
+
+function resolvePreviewReadLimitBytes(): number {
+  const raw = process.env[PREVIEW_READ_LIMIT_ENV];
+  if (!raw) {
+    return MAX_PREVIEW_READ_BYTES;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : MAX_PREVIEW_READ_BYTES;
+}
+
+function isLikelyBinaryBuffer(buffer: Buffer): boolean {
+  const sampleLength = Math.min(buffer.length, BINARY_SAMPLE_BYTES);
+  if (sampleLength === 0) {
+    return false;
+  }
+
+  let suspiciousCount = 0;
+  for (let index = 0; index < sampleLength; index += 1) {
+    const value = buffer[index];
+    if (value === 0) {
+      return true;
+    }
+    if ((value < 7 || value > 14) && value < 32 && value !== 9 && value !== 10 && value !== 13) {
+      suspiciousCount += 1;
+    }
+  }
+  return suspiciousCount / sampleLength > 0.2;
+}
 
 type ProjectedEditResult =
   | {
@@ -114,6 +144,7 @@ function resolveWorkspaceReadPath(cwd: string, rawPath: string): { resolvedPath:
 }
 
 export function readWorkspaceUtf8File(cwd: string, rawPath: string): FileReadResult {
+  const maxPreviewReadBytes = resolvePreviewReadLimitBytes();
   const safePath = resolveWorkspaceReadPath(cwd, rawPath);
   if (safePath.error) {
     return { exists: false, error: safePath.error };
@@ -131,16 +162,24 @@ export function readWorkspaceUtf8File(cwd: string, rawPath: string): FileReadRes
         error: `Preview unavailable because '${safePath.resolvedPath}' is not a regular file.`,
       };
     }
-    if (stats.size > MAX_PREVIEW_READ_BYTES) {
+    if (stats.size > maxPreviewReadBytes) {
       return {
         exists: true,
-        error: `Preview unavailable because '${safePath.resolvedPath}' exceeds the ${MAX_PREVIEW_READ_BYTES} byte preview read limit.`,
+        error: `Preview unavailable because '${safePath.resolvedPath}' exceeds the ${maxPreviewReadBytes} byte preview read limit.`,
+      };
+    }
+
+    const rawBuffer = readFileSync(safePath.resolvedPath);
+    if (isLikelyBinaryBuffer(rawBuffer)) {
+      return {
+        exists: true,
+        error: `Preview unavailable because '${safePath.resolvedPath}' appears to be a binary file.`,
       };
     }
 
     return {
       exists: true,
-      content: readFileSync(safePath.resolvedPath, "utf8"),
+      content: rawBuffer.toString("utf8"),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -80,6 +80,37 @@ function modelLabel(ctx: any): string {
 	return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
 }
 
+function shortModelLabel(ctx: any): string {
+	const model = ctx.model;
+	if (!model) return "no-model";
+	const provider = typeof model.provider === "string" ? model.provider : "";
+	const id = typeof model.id === "string" ? model.id : "";
+	if (!provider && !id) return "model";
+	if (!id) return provider;
+	const compactId = id.includes("/") ? id.slice(id.lastIndexOf("/") + 1) : id;
+	return provider ? `${provider}/${compactId}` : compactId;
+}
+
+function buildRightSide(ctx: any, pi: ExtensionAPI, theme: Theme, innerWidth: number): string {
+	const usage = renderContextUsage(ctx, theme);
+	const thinking = pi.getThinkingLevel();
+	const full = [modelLabel(ctx), thinking, usage].join(" • ");
+	if (visibleWidth(full) <= innerWidth) {
+		return full;
+	}
+
+	const compact = [shortModelLabel(ctx), thinking, usage].join(" • ");
+	if (visibleWidth(compact) <= innerWidth) {
+		return compact;
+	}
+
+	if (visibleWidth(usage) <= innerWidth) {
+		return usage;
+	}
+
+	return truncateToWidth(usage, innerWidth, "");
+}
+
 function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 	ctx.ui.setFooter((tui: any, theme: Theme, footerData: FooterData) => ({
 		dispose: footerData.onBranchChange(() => tui.requestRender()),
@@ -94,7 +125,7 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 			const branch = footerData.getGitBranch();
 			if (branch) leftSide += ` • ${branch}`;
 
-			const rightSide = [modelLabel(ctx), pi.getThinkingLevel(), renderContextUsage(ctx, theme)].join(" • ");
+			const rightSide = buildRightSide(ctx, pi, theme, innerWidth);
 
 			return [
 				twoColumnLine(theme.fg("text", leftSide), theme.fg("text", rightSide), width, innerWidth),

@@ -711,11 +711,58 @@ function formatBashSummary(
   theme: RenderTheme,
   _showTruncationHints: boolean,
 ): string {
+  const semanticSummary = deriveBashSemanticSummary(lines);
+  if (semanticSummary) {
+    return theme.fg("muted", semanticSummary);
+  }
   const lineCount = lines.length;
   return theme.fg(
     "muted",
     `${lineCount} ${pluralize(lineCount, "line")} returned`,
   );
+}
+
+function deriveBashSemanticSummary(lines: string[]): string | null {
+  if (lines.length === 0) {
+    return null;
+  }
+
+  const joined = lines.join("\n");
+  const lower = joined.toLowerCase();
+
+  const jestLike = joined.match(/\b(\d+)\s+passed\b[\s\S]*?\b(\d+)\s+failed\b[\s\S]*?\b(\d+)\s+total\b/i)
+    ?? joined.match(/\b(\d+)\s+passed\b[\s\S]*?\b(\d+)\s+total\b/i);
+  if (jestLike) {
+    if (jestLike.length >= 4) {
+      return `${jestLike[1]} passed • ${jestLike[2]} failed • ${jestLike[3]} total`;
+    }
+    return `${jestLike[1]} passed • ${jestLike[2]} total`;
+  }
+
+  const pytest = joined.match(/=+\s+(\d+)\s+passed(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+skipped)?[^=]*=+/i);
+  if (pytest) {
+    const parts = [`${pytest[1]} passed`];
+    if (pytest[2]) parts.push(`${pytest[2]} failed`);
+    if (pytest[3]) parts.push(`${pytest[3]} skipped`);
+    return parts.join(" • ");
+  }
+
+  const eslint = joined.match(/(\d+)\s+problems?\s+\((\d+)\s+errors?,\s+(\d+)\s+warnings?\)/i);
+  if (eslint) {
+    return `${eslint[1]} problems • ${eslint[2]} errors • ${eslint[3]} warnings`;
+  }
+
+  if (/\bbuild\s+(succeeded|successful)\b/i.test(joined) || /\bcompiled successfully\b/i.test(joined)) {
+    return "build succeeded";
+  }
+  if (/\bbuild\s+failed\b/i.test(joined) || /\berror: build failed\b/i.test(joined)) {
+    return "build failed";
+  }
+  if (lower.includes("no tests ran")) {
+    return "no tests ran";
+  }
+
+  return null;
 }
 
 function formatBashTruncationHints(
