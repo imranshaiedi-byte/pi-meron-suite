@@ -6,8 +6,9 @@ const TRANSPARENT_RESET = `${RESET}${TRANSPARENT_BG}`;
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 const WRAP_MARK = "\uE000";
 const PATCH_FLAG = Symbol.for("pi-meron-footer:claude-tool-container-style");
+const ORIGINAL_RENDER = Symbol.for("pi-meron-footer:claude-tool-container-original-render");
 
-// Match the plain-white-v1 theme text grey (#d0d0d0).
+// Match plain-white-v1's message input border/text grey (#d0d0d0).
 const BORDER_COLOR = "\x1b[38;2;208;208;208m";
 const TOOL_RULE = "\x1b[38;2;208;208;208m";
 
@@ -47,6 +48,10 @@ function borderLine(width: number): string {
   return `${BORDER_COLOR}${"─".repeat(Math.max(1, width))}${TRANSPARENT_RESET}`;
 }
 
+function isHorizontalRuleLine(text: string): boolean {
+  return /^─+$/.test(stripAnsi(text).trim());
+}
+
 function isToolExecutionLike(value: unknown): value is { toolName: string; toolCallId: string } {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
@@ -59,10 +64,11 @@ function normalizeLeadingCheckGlyph(line: string): string {
 
 export function patchToolContainerStyle(): void {
   const proto = Container.prototype as unknown as Record<PropertyKey, unknown>;
-  if (proto[PATCH_FLAG]) return;
+  const currentRender = proto.render;
+  if (typeof currentRender !== "function") return;
 
-  const originalRender = proto.render;
-  if (typeof originalRender !== "function") return;
+  const originalRender = typeof proto[ORIGINAL_RENDER] === "function" ? proto[ORIGINAL_RENDER] : currentRender;
+  proto[ORIGINAL_RENDER] = originalRender;
 
   proto.render = function patchedContainerRender(this: unknown, width: number): string[] {
     const rendered = (originalRender as (this: unknown, width: number) => string[]).call(this, width);
@@ -72,6 +78,11 @@ export function patchToolContainerStyle(): void {
     while (start < rendered.length && isBlankLine(rendered[start] ?? "")) start++;
     let end = rendered.length - 1;
     while (end >= start && isBlankLine(rendered[end] ?? "")) end--;
+
+    // If /reload replaces an older patch, strip its old horizontal rules before
+    // adding the current theme-matched rules.
+    while (start <= end && isHorizontalRuleLine(rendered[start] ?? "")) start++;
+    while (end >= start && isHorizontalRuleLine(rendered[end] ?? "")) end--;
     if (start > end) return rendered;
 
     const core = rendered.slice(start, end + 1).map((line) => clampLineWidth(normalizeLeadingCheckGlyph(line), width));
