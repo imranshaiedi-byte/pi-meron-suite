@@ -626,27 +626,58 @@ function formatCollapsedBashCommand(
 
   const MAX_WIDTH = 100;
 
-  // Split multi-line commands (heredocs, scripts)
+  // Multi-line commands / heredocs: show the first line, collapse the rest.
   const lines = rawCommand.split("\n").map((l) => l.trimEnd()).filter(Boolean);
-  if (lines.length > 1) {
-    const first = visibleWidth(lines[0]!) > MAX_WIDTH - 20
-      ? `${truncateEndToWidth(lines[0]!, MAX_WIDTH - 20)}${theme.fg("muted", "…")}`
-      : lines[0]!;
-    return `${first} ${theme.fg("muted", `… ${lines.length - 1} more lines • Ctrl+O`)}`;
+  if (lines.length > 1 || shouldUseRawBashDisplay(rawCommand)) {
+    const first = visibleWidth(lines[0] ?? rawCommand) > MAX_WIDTH - 20
+      ? `${truncateEndToWidth(lines[0] ?? rawCommand, MAX_WIDTH - 20)}${theme.fg("muted", "…")}`
+      : (lines[0] ?? rawCommand);
+    const remaining = Math.max(0, lines.length - 1);
+    return remaining > 0
+      ? `${first} ${theme.fg("muted", `… ${remaining} more lines • Ctrl+O`)}`
+      : first;
   }
 
-  // Split on && — show first segment, hint for the rest
-  const segments = rawCommand.split(/\s*&&\s*/);
+  // Chained commands: skip boring setup prefixes (cd/export/source/etc.),
+  // show the first real action, collapse everything else.
+  const segments = splitShellSegments(rawCommand);
   if (segments.length <= 1) {
     if (visibleWidth(rawCommand) <= MAX_WIDTH) return rawCommand;
     return `${truncateEndToWidth(rawCommand, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`;
   }
 
-  const first = segments[0]!.trim();
-  const display = visibleWidth(first) > MAX_WIDTH
-    ? `${truncateEndToWidth(first, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`
-    : first;
-  return `${display} ${theme.fg("muted", `&& … ${segments.length - 1} more • Ctrl+O`)}`;
+  let directory: string | undefined;
+  let actionIndex = 0;
+  let action = segments[0] ?? rawCommand;
+
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index] ?? "";
+    const setup = classifySetupSegment(segment);
+    if (setup) {
+      if (setup === "directory") {
+        directory = parseDirectoryChange(segment) ?? directory;
+      }
+      continue;
+    }
+
+    const stripped = stripLeadingEnvAssignments(segment);
+    action = stripped.command || segment;
+    actionIndex = index;
+    break;
+  }
+
+  const display = visibleWidth(action) > MAX_WIDTH
+    ? `${truncateEndToWidth(action, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`
+    : action;
+
+  const omitted = Math.max(0, segments.length - actionIndex - 1);
+  const context: string[] = [];
+  if (directory) context.push(`in ${directory}`);
+  if (omitted > 0) context.push(`&& … ${omitted} more • Ctrl+O`);
+
+  return context.length > 0
+    ? `${display} ${theme.fg("muted", context.join("  "))}`
+    : display;
 }
 
 function truncationHint(
