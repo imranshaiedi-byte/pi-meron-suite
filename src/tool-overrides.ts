@@ -619,11 +619,17 @@ function summarizeBashCommand(command: string): BashCommandSummary {
 
 function formatCollapsedBashCommand(
   command: string,
-  _theme: RenderTheme,
+  theme: RenderTheme,
 ): string {
   const rawCommand = command.trim();
   if (!rawCommand) return "...";
-  return rawCommand;
+
+  const lines = rawCommand.split("\n").map((l) => l.trimEnd()).filter(Boolean);
+  if (lines.length <= 1) return rawCommand;
+
+  // Multi-line: show first line + hint
+  const first = truncateEndToWidth(lines[0]!, 100);
+  return `${first} ${theme.fg("muted", `… ${lines.length - 1} more lines • Ctrl+O`)}`;
 }
 
 function truncationHint(
