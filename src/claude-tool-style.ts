@@ -86,10 +86,9 @@ export function patchToolContainerStyle(): void {
     while (end >= start && isHorizontalRuleLine(rendered[end] ?? "")) end--;
     if (start > end) return rendered;
 
-    const innerWidth = Math.max(1, width - GLASS_PREFIX_W);
-    const core = rendered.slice(start, end + 1).map((line) => clampLineWidth(normalizeLeadingCheckGlyph(line), innerWidth));
-    const barSpacer = `${GLASS_BAR}${" ".repeat(Math.max(0, innerWidth))}`;
-    return [barSpacer, ...core.map((line) => `${GLASS_BAR} ${line}`)];
+    const core = rendered.slice(start, end + 1).map((line) => clampLineWidth(normalizeLeadingCheckGlyph(line), width));
+    const spacerLine = " ".repeat(Math.max(1, width));
+    return [spacerLine, ...core];
   };
 
   proto[PATCH_FLAG] = true;
