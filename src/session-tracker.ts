@@ -92,6 +92,12 @@ export function registerSessionTracker(pi: ExtensionAPI): void {
     state.currentTurnThinking = pi.getThinkingLevel();
     state.toolsUsed = [];
     state.errors = [];
+    // Debug: show model info in status bar
+    const m = (ctx as any).model;
+    const mType = typeof m;
+    const mKeys = m && mType === "object" ? Object.keys(m).join(",") : String(m);
+    const evKeys = Object.keys(event).join(",");
+    ctx.ui.setStatus("meron-debug", `turn_start: model=${mType}(${mKeys}) ev=[${evKeys}]`);
   });
 
   pi.on("turn_end", async (event, ctx) => {
@@ -100,6 +106,12 @@ export function registerSessionTracker(pi: ExtensionAPI): void {
     if (isRecord(event.message)) {
       captureModelFromEvent(event.message);
     }
+
+    // Debug: show what we captured
+    const m = (ctx as any).model;
+    const mType = typeof m;
+    const mKeys = m && mType === "object" ? Object.keys(m).join(",") : String(m);
+    ctx.ui.setStatus("meron-debug2", `turn_end: saved=${state.currentTurnModel} ctx.model=${mType}(${mKeys}) evKeys=${Object.keys(event).join(",")}`);
 
     if (state.currentTurnStart == null) return;
 
