@@ -29,6 +29,6 @@ export function registerTurnTiming(pi: ExtensionAPI): void {
       customType: "meron-turn-timing",
       content: `──── ${duration} ────`,
       display: true,
-    });
+    }, { triggerTurn: false });
   });
 }
