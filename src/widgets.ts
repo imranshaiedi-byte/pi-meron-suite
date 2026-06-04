@@ -26,7 +26,7 @@ function getTheme(ctx: ExtensionContext): ThemeLike | undefined {
   return ctx.ui?.theme as unknown as ThemeLike | undefined;
 }
 
-// Feature 3: Context widget above editor (git, cwd, changed files)
+// Feature 3: Context widget above editor (cwd, changed files, errors)
 export function updateContextWidget(ctx: ExtensionContext): void {
   const theme = getTheme(ctx);
   if (!theme) return;
@@ -67,10 +67,12 @@ export function updateStatsWidget(ctx: ExtensionContext): void {
 
   const parts: string[] = [];
 
-  const model = ctx.model;
+  const model = (ctx as any).model;
   if (model) {
-    const shortModel = model.id.split("/").pop() ?? model.id;
-    parts.push(theme.fg("text", `${model.provider}/${shortModel}`));
+    const provider = model.provider ?? "";
+    const id = model.id ?? model.name ?? "";
+    const shortModel = id.split("/").pop() ?? id;
+    parts.push(theme.fg("text", provider ? `${provider}/${shortModel}` : shortModel));
   }
 
   const tokens = getTotalTokens();
@@ -154,24 +156,32 @@ export function updateProgressIndicator(ctx: ExtensionContext): void {
 
 // Feature 5: Turn separator injection
 export function injectTurnSeparator(pi: ExtensionAPI, ctx: ExtensionContext): void {
+  const theme = getTheme(ctx);
+  if (!theme) return;
+
   const turnIndex = getTurnCount();
   const lastTurn = getLastTurn();
 
-  // DEBUG: always render, before any early returns
-  const ctxKeys = Object.keys(ctx).sort().join(",");
-  const modelVal = (ctx as any).model;
-  const modelType = typeof modelVal;
-  const modelKeys = modelVal && modelType === "object" ? Object.keys(modelVal).join(",") : String(modelVal);
-  const uiTheme = ctx.ui?.theme;
-  const hasTheme = !!uiTheme;
+  // Get model from turn if recorded, otherwise from ctx
+  let modelId = lastTurn?.modelId;
+  if (!modelId || modelId === "unknown") {
+    const m = (ctx as any).model;
+    if (m) modelId = m.id ?? m.name ?? "unknown";
+  }
+  const shortModel = modelId.split("/").pop() ?? modelId;
 
-  const label = `─── turn ${turnIndex} ─── ctx=[${ctxKeys}] model=${modelType}(${modelKeys}) theme=${hasTheme} ───`;
+  const duration = lastTurn ? formatDuration(lastTurn.durationMs) : "";
+  const tokens = lastTurn && (lastTurn.tokensIn || lastTurn.tokensOut)
+    ? ` · ${formatTokenCount((lastTurn.tokensIn ?? 0) + (lastTurn.tokensOut ?? 0))} tokens`
+    : "";
+
+  const label = `─── turn ${turnIndex} ─── ${shortModel}${duration ? ` · ${duration}` : ""}${tokens} ───`;
 
   pi.sendMessage({
     customType: "meron-turn-separator",
     content: label,
     display: true,
-    details: { turnIndex, modelId: lastTurn?.modelId, duration: lastTurn?.durationMs },
+    details: { turnIndex, modelId, duration: lastTurn?.durationMs },
   }, { triggerTurn: false });
 }
 

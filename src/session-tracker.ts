@@ -54,10 +54,9 @@ function extractUsage(message: unknown): { tokensIn?: number; tokensOut?: number
 
 function captureModelFromEvent(event: unknown): void {
   if (!isRecord(event)) return;
-  // Try event.model
   const m = event.model;
   if (isRecord(m)) {
-    const id = typeof m.id === "string" ? m.id : typeof m.name === "string" ? m.name : undefined;
+    const id = typeof m.id === "string" ? m.id : undefined;
     const provider = typeof m.provider === "string" ? m.provider : undefined;
     if (id) state.currentTurnModel = id;
     if (provider) state.currentTurnProvider = provider;
@@ -66,13 +65,8 @@ function captureModelFromEvent(event: unknown): void {
 
 function captureModelFromCtx(ctx: ExtensionContext): void {
   const m = (ctx as any).model;
-  if (!m) return;
-  if (typeof m === "string") {
-    state.currentTurnModel = m;
-    return;
-  }
-  if (!isRecord(m)) return;
-  const id = typeof m.id === "string" ? m.id : typeof m.name === "string" ? m.name : undefined;
+  if (!m || !isRecord(m)) return;
+  const id = typeof m.id === "string" ? m.id : undefined;
   const provider = typeof m.provider === "string" ? m.provider : undefined;
   if (id) state.currentTurnModel = id;
   if (provider) state.currentTurnProvider = provider;
@@ -101,15 +95,10 @@ export function registerSessionTracker(pi: ExtensionAPI): void {
   });
 
   pi.on("turn_end", async (event, ctx) => {
-    // Capture model from every possible source
     captureModelFromCtx(ctx);
     captureModelFromEvent(event);
-    // Also try the message itself
     if (isRecord(event.message)) {
       captureModelFromEvent(event.message);
-      if (isRecord(event.message.model)) {
-        captureModelFromEvent(event.message.model);
-      }
     }
 
     if (state.currentTurnStart == null) return;
