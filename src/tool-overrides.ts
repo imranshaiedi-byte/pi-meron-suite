@@ -628,8 +628,7 @@ function formatCollapsedBashCommand(
   if (lines.length <= 1) return rawCommand;
 
   // Multi-line: show first line + hint
-  const first = truncateEndToWidth(lines[0]!, 100);
-  return `${first} ${theme.fg("muted", `… ${lines.length - 1} more lines • Ctrl+O`)}`;
+  return `${lines[0]!} ${theme.fg("muted", `… ${lines.length - 1} more lines • Ctrl+O`)}`;
 }
 
 function truncationHint(
