@@ -8,9 +8,10 @@ const WRAP_MARK = "\uE000";
 const PATCH_FLAG = Symbol.for("pi-meron-footer:claude-tool-container-style");
 const ORIGINAL_RENDER = Symbol.for("pi-meron-footer:claude-tool-container-original-render");
 
-// Match plain-white-v1's message input border/text grey (#d0d0d0).
-const BORDER_COLOR = "\x1b[38;2;208;208;208m";
-const TOOL_RULE = "\x1b[38;2;208;208;208m";
+// Glass UI: subtle vertical accent bar
+const GLASS_BAR = "\x1b[38;2;80;80;80m│\x1b[0m\x1b[49m";
+const TOOL_RULE = "\x1b[38;2;100;100;100m";
+const GLASS_PREFIX_W = 2;
 
 export interface RenderThemeLike {
   fg(color: string, text: string): string;
@@ -45,7 +46,7 @@ function clampLineWidth(line: string, width: number): string {
 }
 
 function borderLine(width: number): string {
-  return `${BORDER_COLOR}${"─".repeat(Math.max(1, width))}${TRANSPARENT_RESET}`;
+  return `${TOOL_RULE}${"─".repeat(Math.max(1, width))}${TRANSPARENT_RESET}`;
 }
 
 function isHorizontalRuleLine(text: string): boolean {
@@ -85,9 +86,10 @@ export function patchToolContainerStyle(): void {
     while (end >= start && isHorizontalRuleLine(rendered[end] ?? "")) end--;
     if (start > end) return rendered;
 
-    const core = rendered.slice(start, end + 1).map((line) => clampLineWidth(normalizeLeadingCheckGlyph(line), width));
-    const spacerLine = " ".repeat(Math.max(1, width));
-    return [spacerLine, borderLine(width), ...core, borderLine(width)];
+    const innerWidth = Math.max(1, width - GLASS_PREFIX_W);
+    const core = rendered.slice(start, end + 1).map((line) => clampLineWidth(normalizeLeadingCheckGlyph(line), innerWidth));
+    const separator = `${GLASS_BAR}${" ".repeat(Math.max(0, innerWidth))}`;
+    return [separator, ...core.map((line) => `${GLASS_BAR} ${line}`)];
   };
 
   proto[PATCH_FLAG] = true;

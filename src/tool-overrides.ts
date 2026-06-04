@@ -1058,10 +1058,22 @@ function formatBashSummary(
   _showTruncationHints: boolean,
 ): string {
   const lineCount = lines.length;
-  return theme.fg(
-    "muted",
-    `${lineCount} ${pluralize(lineCount, "line")} returned`,
-  );
+  if (lineCount === 0) {
+    return theme.fg("muted", "(no output)");
+  }
+
+  const cleanLines = lines.map((l) => l.replace(/\x1b\[[0-9;]*m/g, "").trim()).filter(Boolean);
+  if (cleanLines.length === 0) {
+    return theme.fg("muted", "(no output)");
+  }
+
+  if (lineCount <= 3) {
+    const shown = cleanLines.slice(0, 3).join("\n");
+    return theme.fg("text", shown);
+  }
+
+  const preview = cleanLines[0]!.length > 60 ? `${cleanLines[0]!.slice(0, 57)}...` : cleanLines[0]!;
+  return `${theme.fg("text", preview)} ${theme.fg("muted", `• ${lineCount} lines`)}`;
 }
 
 function formatBashTruncationHints(
