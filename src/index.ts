@@ -1,6 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { registerToolDisplayOverrides } from "./tool-overrides.js";
 import { DEFAULT_TOOL_DISPLAY_CONFIG, type ToolDisplayConfig } from "./types.js";
+import { registerTurnTiming } from "./turn-timing.js";
 
 const FIXED_TOOL_DISPLAY_CONFIG: ToolDisplayConfig = {
   ...DEFAULT_TOOL_DISPLAY_CONFIG,
@@ -19,4 +20,5 @@ const FIXED_TOOL_DISPLAY_CONFIG: ToolDisplayConfig = {
 
 export default function toolDisplayExtension(pi: ExtensionAPI): void {
   registerToolDisplayOverrides(pi, () => FIXED_TOOL_DISPLAY_CONFIG);
+  registerTurnTiming(pi);
 }
