@@ -1056,24 +1056,24 @@ function formatBashSummary(
   _details: BashToolDetails | undefined,
   theme: RenderTheme,
   _showTruncationHints: boolean,
-): string {
+): { text: string; truncated: boolean } {
   const lineCount = lines.length;
   if (lineCount === 0) {
-    return theme.fg("muted", "(no output)");
+    return { text: theme.fg("muted", "(no output)"), truncated: false };
   }
 
   const cleanLines = lines.map((l) => l.replace(/\x1b\[[0-9;]*m/g, "").trim()).filter(Boolean);
   if (cleanLines.length === 0) {
-    return theme.fg("muted", "(no output)");
+    return { text: theme.fg("muted", "(no output)"), truncated: false };
   }
 
   if (lineCount <= 3) {
     const shown = cleanLines.slice(0, 3).join("\n");
-    return theme.fg("text", shown);
+    return { text: theme.fg("text", shown), truncated: false };
   }
 
   const preview = cleanLines[0]!.length > 60 ? `${cleanLines[0]!.slice(0, 57)}...` : cleanLines[0]!;
-  return `${theme.fg("text", preview)} ${theme.fg("muted", `• ${lineCount} lines`)}`;
+  return { text: `${theme.fg("text", preview)} ${theme.fg("muted", `• ${lineCount} lines`)}`, truncated: true };
 }
 
 function formatBashTruncationHints(
@@ -1111,13 +1111,14 @@ function renderBashLivePreview(
 
   const lines = prepareOutputLines(rawOutput, options);
   if (!options.expanded) {
-    let summary = lines.length === 0
-      ? formatBashNoOutputLine(getStringField(context?.args, "command"), theme)
+    const bashResult = lines.length === 0
+      ? { text: formatBashNoOutputLine(getStringField(context?.args, "command"), theme), truncated: false }
       : formatBashSummary(lines, details, theme, config.showTruncationHints);
+    let summary = bashResult.text;
     if (config.showTruncationHints) {
       summary += formatBashTruncationHints(details, theme).replace(/^\n/, " • ");
     }
-    if (lines.length > 0) {
+    if (bashResult.truncated && lines.length > 0) {
       summary += formatExpandHint(theme);
     }
     return renderCollapsedSummary(context, config, summary, theme);
@@ -1723,13 +1724,14 @@ export function registerToolDisplayOverrides(
 
       if (!options.expanded) {
         setToolResultStatus(context, false);
-        let summary = lines.length === 0
-          ? formatBashNoOutputLine(getStringField(context?.args, "command"), theme)
+        const bashResult = lines.length === 0
+          ? { text: formatBashNoOutputLine(getStringField(context?.args, "command"), theme), truncated: false }
           : formatBashSummary(lines, details, theme, config.showTruncationHints);
+        let summary = bashResult.text;
         if (config.showTruncationHints) {
           summary += formatBashTruncationHints(details, theme).replace(/^\n/, " • ");
         }
-        if (lines.length > 0) {
+        if (bashResult.truncated && lines.length > 0) {
           summary += formatExpandHint(theme);
         }
         return renderCollapsedSummary(context, config, summary, theme);
