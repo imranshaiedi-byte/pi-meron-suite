@@ -88,7 +88,8 @@ export function patchToolContainerStyle(): void {
 
     const innerWidth = Math.max(1, width - GLASS_PREFIX_W);
     const core = rendered.slice(start, end + 1).map((line) => clampLineWidth(normalizeLeadingCheckGlyph(line), innerWidth));
-    return core.map((line) => `${GLASS_BAR} ${line}`);
+    const spacerLine = " ".repeat(Math.max(1, width));
+    return [spacerLine, ...core.map((line) => `${GLASS_BAR} ${line}`)];
   };
 
   proto[PATCH_FLAG] = true;
