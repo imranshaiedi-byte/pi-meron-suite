@@ -55,23 +55,11 @@ function extractUsage(message: unknown): { tokensIn?: number; tokensOut?: number
 
 function captureModel(ctx: ExtensionContext): void {
   const m = (ctx as any).model;
+  console.error(`[meron] captureModel: model=${!!m} keys=${m ? Object.keys(m).join(',') : 'null'}`);
   if (!m) return;
-  // Debug: dump all keys to figure out the actual shape
-  const keys = Object.keys(m);
-  const snapshot: Record<string, unknown> = {};
-  for (const k of keys) {
-    const v = (m as any)[k];
-    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
-      snapshot[k] = v;
-    } else if (v == null) {
-      snapshot[k] = null;
-    } else {
-      snapshot[k] = typeof v;
-    }
-  }
-  console.error("[meron] ctx.model keys:", JSON.stringify(snapshot));
   const id = typeof m.id === "string" ? m.id : typeof m.name === "string" ? m.name : undefined;
   const provider = typeof m.provider === "string" ? m.provider : undefined;
+  console.error(`[meron] captureModel: id=${id} provider=${provider}`);
   if (id) state.currentTurnModel = id;
   if (provider) state.currentTurnProvider = provider;
 }
@@ -101,7 +89,12 @@ export function registerSessionTracker(pi: ExtensionAPI): void {
   });
 
   pi.on("turn_end", async (event, ctx) => {
-    if (state.currentTurnStart == null) return;
+    console.error(`[meron] turn_end: model=${state.currentTurnModel} start=${state.currentTurnStart}`);
+    captureModel(ctx);
+    if (state.currentTurnStart == null) {
+      console.error(`[meron] turn_end: SKIPPING — no turn_start`);
+      return;
+    }
 
     const usage = extractUsage(event.message);
     if (usage.tokensIn) state.totalTokensIn += usage.tokensIn;
