@@ -624,41 +624,29 @@ function formatCollapsedBashCommand(
   const rawCommand = command.trim();
   if (!rawCommand) return "...";
 
-  const MAX_SEGMENT_WIDTH = 100;
-  const MAX_SEGMENTS = 5;
+  const MAX_WIDTH = 100;
 
-  // Split multi-line commands
+  // Split multi-line commands (heredocs, scripts)
   const lines = rawCommand.split("\n").map((l) => l.trimEnd()).filter(Boolean);
   if (lines.length > 1) {
-    const first = visibleWidth(lines[0]!) > MAX_SEGMENT_WIDTH - 20
-      ? `${truncateEndToWidth(lines[0]!, MAX_SEGMENT_WIDTH - 20)}${theme.fg("muted", "…")}`
+    const first = visibleWidth(lines[0]!) > MAX_WIDTH - 20
+      ? `${truncateEndToWidth(lines[0]!, MAX_WIDTH - 20)}${theme.fg("muted", "…")}`
       : lines[0]!;
     return `${first} ${theme.fg("muted", `… ${lines.length - 1} more lines • Ctrl+O`)}`;
   }
 
-  // Split single-line chained commands on &&
+  // Split on && — show first segment, hint for the rest
   const segments = rawCommand.split(/\s*&&\s*/);
   if (segments.length <= 1) {
-    // No chaining — just truncate if long
-    if (visibleWidth(rawCommand) <= MAX_SEGMENT_WIDTH) return rawCommand;
-    return `${truncateEndToWidth(rawCommand, MAX_SEGMENT_WIDTH - 1)}${theme.fg("muted", "…")}`;
+    if (visibleWidth(rawCommand) <= MAX_WIDTH) return rawCommand;
+    return `${truncateEndToWidth(rawCommand, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`;
   }
 
-  // Show up to MAX_SEGMENTS segments, one per line
-  const shown = segments.slice(0, MAX_SEGMENTS).map((seg) => {
-    const trimmed = seg.trim();
-    return visibleWidth(trimmed) > MAX_SEGMENT_WIDTH
-      ? `${truncateEndToWidth(trimmed, MAX_SEGMENT_WIDTH - 1)}${theme.fg("muted", "…")}`
-      : trimmed;
-  });
-
-  const first = shown[0]!;
-  const rest = shown.slice(1).map((s) => theme.fg("muted", "&& ") + s);
-  const more = segments.length > MAX_SEGMENTS
-    ? [theme.fg("muted", `… ${segments.length - MAX_SEGMENTS} more • Ctrl+O)`)]
-    : [];
-
-  return [first, ...rest, ...more].join("\n");
+  const first = segments[0]!.trim();
+  const display = visibleWidth(first) > MAX_WIDTH
+    ? `${truncateEndToWidth(first, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`
+    : first;
+  return `${display} ${theme.fg("muted", `&& … ${segments.length - 1} more • Ctrl+O`)}`;
 }
 
 function truncationHint(
