@@ -160,6 +160,10 @@ export function injectTurnSeparator(pi: ExtensionAPI, ctx: ExtensionContext): vo
   const lastTurn = getLastTurn();
   const turnIndex = getTurnCount();
 
+  const fs = require("node:fs");
+  const debugFile = "C:/Users/imran/meron-debug.log";
+  fs.appendFileSync(debugFile, `${new Date().toISOString()} injectTurnSeparator: turnIndex=${turnIndex} turns=${JSON.stringify(getState().turns.map((t:any)=>({model:t.modelId,dur:t.durationMs})))} model=${JSON.stringify(ctx.model)}\n`);
+
   // Try module state first, then ctx.model directly
   let modelId = lastTurn?.modelId;
   if (!modelId || modelId === "unknown") {

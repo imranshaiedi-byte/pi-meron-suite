@@ -53,23 +53,34 @@ function extractUsage(message: unknown): { tokensIn?: number; tokensOut?: number
   return { tokensIn, tokensOut };
 }
 
+const DEBUG_LOG = "C:/Users/imran/meron-debug.log";
+
+function log(msg: string): void {
+  try {
+    const fs = require("node:fs");
+    fs.appendFileSync(DEBUG_LOG, `${new Date().toISOString()} ${msg}\n`);
+  } catch {}
+}
+
 function captureModel(ctx: ExtensionContext): void {
   const m = (ctx as any).model;
-  console.error(`[meron] captureModel: model=${!!m} keys=${m ? Object.keys(m).join(',') : 'null'}`);
+  log(`captureModel: model=${!!m} keys=${m ? Object.keys(m).slice(0,10).join(',') : 'null'}`);
   if (!m) return;
+  log(`captureModel: id=${m.id} name=${m.name} provider=${m.provider}`);
   const id = typeof m.id === "string" ? m.id : typeof m.name === "string" ? m.name : undefined;
   const provider = typeof m.provider === "string" ? m.provider : undefined;
-  console.error(`[meron] captureModel: id=${id} provider=${provider}`);
   if (id) state.currentTurnModel = id;
   if (provider) state.currentTurnProvider = provider;
 }
 
 export function registerSessionTracker(pi: ExtensionAPI): void {
   pi.on("session_start", async () => {
+    log("session_start: resetting state");
     state = createFreshState();
   });
 
   pi.on("model_select", async (event) => {
+    log(`model_select: id=${event.model?.id} name=${event.model?.name} provider=${event.model?.provider}`);
     if (event.model) {
       state.currentTurnModel = event.model.id ?? event.model.name;
       state.currentTurnProvider = event.model.provider;
@@ -77,10 +88,12 @@ export function registerSessionTracker(pi: ExtensionAPI): void {
   });
 
   pi.on("before_agent_start", async (_event, ctx) => {
+    log("before_agent_start");
     captureModel(ctx);
   });
 
   pi.on("turn_start", async (event, ctx) => {
+    log(`turn_start: timestamp=${event.timestamp}`);
     state.currentTurnStart = event.timestamp ?? Date.now();
     captureModel(ctx);
     state.currentTurnThinking = pi.getThinkingLevel();
@@ -89,10 +102,10 @@ export function registerSessionTracker(pi: ExtensionAPI): void {
   });
 
   pi.on("turn_end", async (event, ctx) => {
-    console.error(`[meron] turn_end: model=${state.currentTurnModel} start=${state.currentTurnStart}`);
+    log(`turn_end: model=${state.currentTurnModel} start=${state.currentTurnStart} turns=${state.turns.length}`);
     captureModel(ctx);
     if (state.currentTurnStart == null) {
-      console.error(`[meron] turn_end: SKIPPING — no turn_start`);
+      log(`turn_end: SKIPPING — no turn_start`);
       return;
     }
 
