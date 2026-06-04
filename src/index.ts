@@ -43,9 +43,4 @@ export default function toolDisplayExtension(pi: ExtensionAPI): void {
 
   // Session diff command
   registerSessionDiffCommand(pi);
-
-  // TEMP: visible proof that ALL new code loaded
-  pi.on("session_start", async (_event, ctx) => {
-    ctx.ui.notify("✦ meron v2 all features loaded ✦", "info");
-  });
 }

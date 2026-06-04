@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { getState, getTurnCount, getSessionErrors, getTotalTokens, getActiveToolCount, getLastTurn } from "./session-tracker.js";
+import { getState, getTurnCount, getSessionErrors, getSessionFilesChanged, getTotalTokens, getActiveToolCount, getLastTurn } from "./session-tracker.js";
 import { shortenPath } from "./render-utils.js";
 
 interface ThemeLike {

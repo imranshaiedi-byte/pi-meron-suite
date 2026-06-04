@@ -299,11 +299,6 @@ function handleThinkingContextEvent(event: unknown, ctx: ExtensionContext | unde
 }
 
 export function registerThinkingLabeling(pi: ExtensionAPI): void {
-  // TEMP: visible proof this code is running
-  pi.on("session_start", async (_event, ctx) => {
-    ctx.ui.notify("✦ meron thinking-label loaded ✦", "info");
-  });
-
   pi.on("message_update", async (event, ctx) => {
     handleThinkingMessageUpdateEvent(event, ctx);
   });
