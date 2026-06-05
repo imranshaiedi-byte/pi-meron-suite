@@ -6,6 +6,7 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { getTodoCountsForFooter, onTodoStateChange } from "./todo-extension.js";
 
 const LEFT_PAD = 3;
 const RIGHT_PAD = 3;
@@ -96,29 +97,43 @@ function modelLabel(ctx: any): string {
 }
 
 function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
-	ctx.ui.setFooter((tui: any, theme: Theme, footerData: FooterData) => ({
-		dispose: footerData.onBranchChange(() => tui.requestRender()),
-		invalidate() {},
-		render(width: number): string[] {
-			const innerWidth = Math.max(0, width - LEFT_PAD - RIGHT_PAD);
+	ctx.ui.setFooter((tui: any, theme: Theme, footerData: FooterData) => {
+		const disposers = [
+			footerData.onBranchChange(() => tui.requestRender()),
+			onTodoStateChange(() => tui.requestRender()),
+		];
+		return {
+			dispose: () => {
+				for (const dispose of disposers) dispose();
+			},
+			invalidate() {},
+			render(width: number): string[] {
+				const innerWidth = Math.max(0, width - LEFT_PAD - RIGHT_PAD);
 
-			let leftSide = compactCwd(ctx.sessionManager.getCwd());
-			const sessionName = ctx.sessionManager.getSessionName();
-			if (sessionName) leftSide += ` • ${sessionName}`;
+				let leftSide = compactCwd(ctx.sessionManager.getCwd());
+				const sessionName = ctx.sessionManager.getSessionName();
+				if (sessionName) leftSide += ` • ${sessionName}`;
 
-			const branch = footerData.getGitBranch();
-			if (branch) leftSide += ` • ${branch}`;
+				const branch = footerData.getGitBranch();
+				if (branch) leftSide += ` • ${branch}`;
 
-			const rightSide = [modelLabel(ctx), pi.getThinkingLevel(), renderContextUsage(ctx, theme)].join(" • ");
+				const todoCounts = getTodoCountsForFooter();
+				const todoLabel = todoCounts.open > 0
+					? theme.fg(todoCounts.inProgress > 0 ? "warning" : "muted", `todo:${todoCounts.open}`)
+					: undefined;
+				const rightSide = [modelLabel(ctx), pi.getThinkingLevel(), renderContextUsage(ctx, theme), todoLabel]
+					.filter((part): part is string => typeof part === "string" && part.length > 0)
+					.join(" • ");
 
-			return responsiveFooterLines(
-				theme.fg("text", leftSide),
-				theme.fg("text", rightSide),
-				width,
-				innerWidth,
-			);
-		},
-	}));
+				return responsiveFooterLines(
+					theme.fg("text", leftSide),
+					theme.fg("text", rightSide),
+					width,
+					innerWidth,
+				);
+			},
+		};
+	});
 }
 
 export function registerMeronFooter(pi: ExtensionAPI) {
