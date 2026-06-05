@@ -518,7 +518,7 @@ function formatCollapsedBashCommand(
   }
 
   // Chained commands: skip boring setup prefixes (cd/export/source/etc.),
-  // show the first real action, collapse everything else.
+  // then show as many meaningful actions as fit horizontally.
   const segments = splitShellSegments(rawCommand);
   if (segments.length <= 1) {
     if (visibleWidth(rawCommand) <= MAX_WIDTH) return rawCommand;
@@ -526,37 +526,53 @@ function formatCollapsedBashCommand(
   }
 
   let directory: string | undefined;
-  let actionIndex = 0;
-  let action = segments[0] ?? rawCommand;
+  const actions: string[] = [];
+  let hiddenSetup = 0;
 
-  for (let index = 0; index < segments.length; index++) {
-    const segment = segments[index] ?? "";
+  for (const segment of segments) {
     const setup = classifySetupSegment(segment);
     if (setup) {
       if (setup === "directory") {
         directory = parseDirectoryChange(segment) ?? directory;
       }
+      hiddenSetup++;
       continue;
     }
 
     const stripped = stripLeadingEnvAssignments(segment);
-    action = stripped.command || segment;
-    actionIndex = index;
-    break;
+    const action = stripped.command || segment;
+    if (action) actions.push(action);
   }
 
-  const display = visibleWidth(action) > MAX_WIDTH
-    ? `${truncateEndToWidth(action, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`
-    : action;
+  if (actions.length === 0) {
+    if (visibleWidth(rawCommand) <= MAX_WIDTH) return rawCommand;
+    return `${truncateEndToWidth(rawCommand, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`;
+  }
 
-  const omitted = Math.max(0, segments.length - actionIndex - 1);
-  const context: string[] = [];
-  if (directory) context.push(`in ${directory}`);
-  if (omitted > 0) context.push(`&& … +${omitted} • Ctrl+O`);
+  const contextSuffix = directory ? ` ${theme.fg("muted", `in ${directory}`)}` : "";
+  const hintReserve = 24 + visibleWidth(contextSuffix);
+  const actionBudget = Math.max(60, MAX_WIDTH - hintReserve);
+  const shown: string[] = [];
+  let omitted = 0;
 
-  return context.length > 0
-    ? `${display} ${theme.fg("muted", context.join("  "))}`
-    : display;
+  for (const action of actions) {
+    const candidate = [...shown, action].join(" → ");
+    if (visibleWidth(candidate) > actionBudget) {
+      omitted++;
+      continue;
+    }
+    shown.push(action);
+  }
+
+  omitted += Math.max(0, actions.length - shown.length - omitted);
+
+  const display = shown.length > 0
+    ? shown.join(" → ")
+    : `${truncateEndToWidth(actions[0]!, actionBudget - 1)}${theme.fg("muted", "…")}`;
+
+  const hidden = omitted + Math.max(0, hiddenSetup - (directory ? 1 : 0));
+  const hint = hidden > 0 ? `  && … +${hidden} • Ctrl+O` : "";
+  return `${display}${contextSuffix}${theme.fg("muted", hint)}`;
 }
 
 function truncationHint(
