@@ -140,6 +140,7 @@ const PROMPT_GUIDELINES = [
   "Use short imperative subjects. Use activeForm for present-continuous labels shown in the live todo overlay.",
   "Use blockedBy/addBlockedBy/removeBlockedBy to capture task dependencies. Dependency cycles and references to missing/deleted tasks are rejected.",
   "Use parentId on create to nest meaningful subtasks under a parent task. Prefer shallow 2-level plans; max depth is 3 levels (parent → child → grandchild). Use sibling subtasks instead of deeper nesting.",
+  "Complete child subtasks before their parent. A parent task cannot be marked completed while any visible descendant remains pending or in_progress.",
   "Use clearParent on update to promote a subtask back to root level.",
 ];
 
@@ -239,7 +240,7 @@ function taskDepth(tasks: Task[], id: number): number | undefined {
   return depth;
 }
 
-function subtreeHeight(tasks: Task[], rootId: number): number {
+function childMap(tasks: Task[]): Map<number, Task[]> {
   const children = new Map<number, Task[]>();
   for (const task of tasks) {
     if (task.status !== "deleted" && task.parentId !== undefined) {
@@ -248,6 +249,11 @@ function subtreeHeight(tasks: Task[], rootId: number): number {
       children.set(task.parentId, siblings);
     }
   }
+  return children;
+}
+
+function subtreeHeight(tasks: Task[], rootId: number): number {
+  const children = childMap(tasks);
 
   function walk(id: number, visited = new Set<number>()): number {
     if (visited.has(id)) return 0;
@@ -257,6 +263,23 @@ function subtreeHeight(tasks: Task[], rootId: number): number {
   }
 
   return walk(rootId);
+}
+
+function incompleteDescendants(tasks: Task[], rootId: number): Task[] {
+  const children = childMap(tasks);
+  const result: Task[] = [];
+
+  function walk(id: number, visited = new Set<number>()) {
+    if (visited.has(id)) return;
+    visited.add(id);
+    for (const child of children.get(id) ?? []) {
+      if (child.status !== "completed") result.push(child);
+      walk(child.id, visited);
+    }
+  }
+
+  walk(rootId);
+  return result.sort((a, b) => a.id - b.id);
 }
 
 function errorResult(current: TaskState, message: string): { state: TaskState; op: Operation } {
@@ -279,6 +302,7 @@ function applyMutation(current: TaskState, action: TaskAction, params: MutationP
         const parentTask = current.tasks.find((task) => task.id === parentId);
         if (!parentTask) return errorResult(current, `parentId: #${parentId} not found`);
         if (parentTask.status === "deleted") return errorResult(current, `parentId: #${parentId} is deleted`);
+        if (parentTask.status === "completed") return errorResult(current, `cannot add an open subtask under completed parent #${parentId}`);
         const parentDepth = taskDepth(current.tasks, parentId);
         if (parentDepth === undefined) return errorResult(current, `parentId: #${parentId} has invalid ancestry`);
         if (parentDepth >= MAX_TASK_DEPTH) return errorResult(current, `parentId would exceed max task depth of ${MAX_TASK_DEPTH}`);
@@ -305,6 +329,13 @@ function applyMutation(current: TaskState, action: TaskAction, params: MutationP
 
       const nextStatus = isStatus(params.status) ? params.status : existing.status;
       if (!isTransitionValid(existing.status, nextStatus)) return errorResult(current, `illegal transition ${existing.status} → ${nextStatus}`);
+      if (nextStatus === "completed") {
+        const openDescendants = incompleteDescendants(current.tasks, id);
+        if (openDescendants.length > 0) {
+          const ids = openDescendants.map((task) => `#${task.id}`).join(", ");
+          return errorResult(current, `cannot complete #${id} while subtasks remain open: ${ids}`);
+        }
+      }
 
       let blockedBy = existing.blockedBy ? [...existing.blockedBy] : [];
       const remove = new Set(normalizeIdList(params.removeBlockedBy));
@@ -325,6 +356,8 @@ function applyMutation(current: TaskState, action: TaskAction, params: MutationP
         const parentTask = current.tasks.find((task) => task.id === newParentId);
         if (!parentTask) return errorResult(current, `parentId: #${newParentId} not found`);
         if (parentTask.status === "deleted") return errorResult(current, `parentId: #${newParentId} is deleted`);
+        if (parentTask.status === "completed" && nextStatus !== "completed") return errorResult(current, `cannot add open subtask #${id} under completed parent #${newParentId}`);
+        if (parentTask.status === "completed" && incompleteDescendants(current.tasks, id).length > 0) return errorResult(current, `cannot add subtree #${id} under completed parent #${newParentId} while it has open subtasks`);
         if (isAncestorOf(current.tasks, id, newParentId)) return errorResult(current, `parentId: #${newParentId} is a descendant of #${id}, would create a cycle`);
         const parentDepth = taskDepth(current.tasks, newParentId);
         if (parentDepth === undefined) return errorResult(current, `parentId: #${newParentId} has invalid ancestry`);

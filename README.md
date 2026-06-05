@@ -24,6 +24,7 @@ Inspired by `@juicesharp/rpiv-todo`, this package adds a session-scoped `todo` t
 - Task states: `pending`, `in_progress`, `completed`, `deleted` tombstones.
 - Dependency support via `blockedBy`, `addBlockedBy`, and `removeBlockedBy`.
 - Subtask support via `parentId` and `clearParent` for detailed nested plans, capped at 3 levels.
+- Parent tasks can only be completed after all visible descendants are completed.
 - Completed tasks stay visible briefly, then fall away on the next agent turn.
 - Footer badge appears when open todos exist: `todo:2`.
 - State replays from the active session branch and survives reloads.
