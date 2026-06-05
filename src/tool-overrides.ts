@@ -635,7 +635,7 @@ function formatCollapsedBashCommand(
       : (lines[0] ?? rawCommand);
     const remaining = Math.max(0, lines.length - 1);
     return remaining > 0
-      ? `${first} ${theme.fg("muted", `… ${remaining} more lines • Ctrl+O`)}`
+      ? `${first} ${theme.fg("muted", `… +${remaining} • Ctrl+O`)}`
       : first;
   }
 
@@ -674,7 +674,7 @@ function formatCollapsedBashCommand(
   const omitted = Math.max(0, segments.length - actionIndex - 1);
   const context: string[] = [];
   if (directory) context.push(`in ${directory}`);
-  if (omitted > 0) context.push(`&& … ${omitted} more • Ctrl+O`);
+  if (omitted > 0) context.push(`&& … +${omitted} • Ctrl+O`);
 
   return context.length > 0
     ? `${display} ${theme.fg("muted", context.join("  "))}`
