@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Text, truncateToWidth } from "@earendil-works/pi-tui";
 import { Type, type Static } from "typebox";
-import { makeToolText, toolHeader } from "./claude-tool-style.js";
+import { makeToolText, setToolResultStatus, toolHeader } from "./claude-tool-style.js";
 import { pluralize } from "./render-utils.js";
 
 const TOOL_NAME = "todo";
@@ -364,42 +364,47 @@ function buildToolResult(action: TaskAction, params: MutationParams, snapshot: T
   };
 }
 
+function todoCallGlyph(args: MutationParams): { glyph: string; color: string } {
+  const action = args.action as TaskAction;
+  if (action === "update" && isStatus(args.status)) {
+    return { glyph: STATUS_GLYPH[args.status], color: STATUS_COLOR[args.status] };
+  }
+  if (action === "delete") return { glyph: "×", color: "muted" };
+  if (action === "clear") return { glyph: "∅", color: "muted" };
+  if (action === "create") return { glyph: "+", color: "success" };
+  return { glyph: ACTION_GLYPH[action] ?? "•", color: "muted" };
+}
+
 function renderTodoCall(args: MutationParams, theme: Theme, context: any): Text {
   const action = args.action as TaskAction;
-  const glyph = ACTION_GLYPH[action] ?? "•";
-  let summary = theme.fg("muted", glyph);
-  if (action === "create" && typeof args.subject === "string") {
+  const { glyph, color } = todoCallGlyph(args);
+  let summary = theme.fg(color, glyph);
+
+  if (action === "clear") {
+    summary += ` ${theme.fg("muted", "clear")}`;
+  } else if (action === "create" && typeof args.subject === "string") {
     summary += ` ${theme.fg("text", args.subject)}`;
   } else if ((action === "update" || action === "get" || action === "delete") && args.id !== undefined) {
     const id = normalizeId(args.id);
     const task = id === undefined ? undefined : state.tasks.find((task) => task.id === id);
-    summary += ` ${theme.fg("accent", task ? `#${task.id} ${task.subject}` : `#${args.id}`)}`;
+    summary += ` ${theme.fg("accent", task ? `#${task.id}` : `#${args.id}`)}`;
+    if (task) summary += ` ${theme.fg("text", task.subject)}`;
   } else if (action === "list" && isStatus(args.status)) {
     summary += ` ${theme.fg("muted", STATUS_LABEL[args.status])}`;
   }
+
   return makeToolText(context?.lastComponent, toolHeader("Todo", summary, theme as any, context));
 }
 
 function renderTodoResult(result: { details?: unknown; isError?: boolean }, theme: Theme, context: any): Text {
   const details = result.details as TodoDetails | undefined;
   if (details?.error || result.isError) {
+    setToolResultStatus(context, true);
     return makeToolText(context?.lastComponent, theme.fg("error", `✗ ${details?.error ?? "todo failed"}`));
   }
 
-  let status: TaskStatus | undefined;
-  const params = details?.params as MutationParams | undefined;
-  if (details && params) {
-    if (details.action === "create") status = details.tasks.at(-1)?.status;
-    if (details.action === "update" || details.action === "delete") {
-      const id = normalizeId(params.id);
-      status = details.tasks.find((task) => task.id === id)?.status;
-    }
-  }
-
-  if (status) {
-    return makeToolText(context?.lastComponent, theme.fg(STATUS_COLOR[status], `${STATUS_GLYPH[status]} ${STATUS_LABEL[status]}`));
-  }
-  return makeToolText(context?.lastComponent, theme.fg("success", "✓"));
+  setToolResultStatus(context, false);
+  return makeToolText(context?.lastComponent, "");
 }
 
 class TodoOverlay {
