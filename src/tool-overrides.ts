@@ -1093,18 +1093,10 @@ function formatBashSummary(
     return { text: theme.fg("muted", "(no output)"), truncated: false };
   }
 
-  const cleanLines = lines.map((l) => l.replace(/\x1b\[[0-9;]*m/g, "").trim()).filter(Boolean);
-  if (cleanLines.length === 0) {
-    return { text: theme.fg("muted", "(no output)"), truncated: false };
-  }
-
-  if (lineCount <= 3) {
-    const shown = cleanLines.slice(0, 3).join("\n");
-    return { text: theme.fg("text", shown), truncated: false };
-  }
-
-  const preview = cleanLines[0]!.length > 60 ? `${cleanLines[0]!.slice(0, 57)}...` : cleanLines[0]!;
-  return { text: `${theme.fg("text", preview)} ${theme.fg("muted", `• ${lineCount} lines`)}`, truncated: true };
+  return {
+    text: theme.fg("muted", `${lineCount} ${pluralize(lineCount, "line")} returned`),
+    truncated: false,
+  };
 }
 
 function formatBashTruncationHints(
@@ -1149,9 +1141,6 @@ function renderBashLivePreview(
     if (config.showTruncationHints) {
       summary += formatBashTruncationHints(details, theme).replace(/^\n/, " • ");
     }
-    if (bashResult.truncated && lines.length > 0) {
-      summary += formatExpandHint(theme);
-    }
     return renderCollapsedSummary(context, config, summary, theme);
   }
 
@@ -1177,7 +1166,6 @@ function renderBashErrorResult(
     let summary = theme.fg("error", "failed");
     if (lines.length > 0) {
       summary += theme.fg("muted", ` • ${lines.length} ${pluralize(lines.length, "line")} returned`);
-      summary += formatExpandHint(theme);
     }
     if (config.showTruncationHints) {
       summary += formatBashTruncationHints(details, theme).replace(/^\n/, " • ");
@@ -1761,9 +1749,6 @@ export function registerToolDisplayOverrides(
         let summary = bashResult.text;
         if (config.showTruncationHints) {
           summary += formatBashTruncationHints(details, theme).replace(/^\n/, " • ");
-        }
-        if (bashResult.truncated && lines.length > 0) {
-          summary += formatExpandHint(theme);
         }
         return renderCollapsedSummary(context, config, summary, theme);
       }
