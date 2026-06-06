@@ -1,73 +1,56 @@
-# pi-meron-footer
+# pi-meron-suite
 
-Pi package that provides a clean padded status bar footer, compact fixed tool rendering, and a lightweight todo tracker for agent plans.
+A comprehensive pi extension suite providing footer/status bar, tool display overrides, a persistent todo manager, and a structured `ask_user_question` tool — all with clean meron-style rendering.
 
 ## Features
 
-### Meron footer
+### Meron Footer
+Clean padded footer/status bar showing:
+- Current working directory, session name, and git branch
+- Model provider/id, thinking level, context usage, and session cost
 
-Single-row padded footer (3-space left/right padding):
+### Tool Display Overrides
+Compact, human-readable rendering for built-in tools:
+- `read`, `grep`, `find`, `ls`, `bash`, `edit`, `write`
+- Status dots, branch-style summaries, and diff previews
+- Clean headers like `● **Read** src/file.ts (42 lines loaded)` instead of raw tool names
 
-```text
-   ~/projects/foo • main    zai/glm-5.1 • off • 45.2%/128k
-```
+### Todo Manager
+Persistent task tree with:
+- Create, update, list, get, delete, clear actions
+- Dependencies via `blockedBy`
+- Subtasks via `parentId` (up to 3 levels deep)
+- Live overlay widget above the editor
+- Meron-style rendering with status glyphs
 
-- **Left:** current directory + session name + git branch
-- **Right:** provider/model · thinking level · context usage %
-- Color-coded context (warning >70%, error >90%)
+### ask_user_question
+Structured questionnaire tool with:
+- Up to 4 questions with 2-4 options each
+- Single-select and multi-select questions
+- "Type something." for custom answers
+- "Chat about this" to abandon the questionnaire
+- Side-by-side preview panes for visual comparisons
+- Tab navigation between questions
+- Review screen before submission
+- Compact result summary after submission
 
-### Todo tracker
-
-Inspired by `@juicesharp/rpiv-todo`, this package adds a session-scoped `todo` tool, `/todos` and `/todo` commands, plus a compact live overlay above the editor.
-
-- Agent-facing `todo` tool with create/update/list/get/delete/clear actions.
-- Task states: `pending`, `in_progress`, `completed`, `deleted` tombstones.
-- Dependency support via `blockedBy`, `addBlockedBy`, and `removeBlockedBy`.
-- Subtask support via `parentId` and `clearParent` for detailed nested plans, capped at 3 levels.
-- Parent tasks can only be completed after all visible descendants are completed.
-- Completed tasks stay visible briefly, then fall away on the next agent turn.
-- Footer badge appears when open todos exist: `todo:2`.
-- State replays from the active session branch and survives reloads.
-
-Overlay example:
-
-```text
-● Todos (1/4)
-├─ ◐ Add todo overlay
-│  └─ ○ Render nested subtasks
-├─ ○ Wire footer badge
-└─ ✓ Research rpiv-todo
-```
-
-Slash commands:
+## Installation
 
 ```bash
-/todos
-/todo
-/todo clear
+git:github.com/imranshaiedi-byte/pi-meron-suite
 ```
 
-### Tool display
+Then restart your pi session.
 
-- `edit` and `write`: diff rendering.
-- All other tool results: one-line summary while collapsed.
-- Press `Ctrl+O` to expand and show all output lines.
-- Long or multiline bash commands are collapsed too, with `Ctrl+O` showing the full command.
+## Usage
 
-Collapsed result summary:
+The extension loads automatically on session start. The `ask_user_question` tool is available for the agent to use whenever structured clarification is needed.
 
-```text
-────────────────────────────────────────
-● Bash npm test
-└─ 42 lines returned • Ctrl+O to expand
-────────────────────────────────────────
-```
+The `/todos` and `/todo` commands show the current task tree.
 
-## Install
+## Theme
 
-```bash
-pi install git:github.com/imranshaiedi-byte/pi-meron-footer
-```
+Includes the `grayscale-v5` theme for consistent styling.
 
 ## License
 

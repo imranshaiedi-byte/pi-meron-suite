@@ -7,8 +7,8 @@ import { pluralize } from "./render-utils.js";
 const TOOL_NAME = "todo";
 const TOOL_LABEL = "Todo";
 const COMMAND_NAMES = ["todos", "todo"] as const;
-const STATE_ENTRY_TYPE = "meron-todo-state";
-const WIDGET_KEY = "meron-todos";
+const STATE_ENTRY_TYPE = "meron-suite-todo-state";
+const WIDGET_KEY = "meron-suite-todos";
 const MAX_WIDGET_LINES = 12;
 const MAX_TASK_DEPTH = 3;
 

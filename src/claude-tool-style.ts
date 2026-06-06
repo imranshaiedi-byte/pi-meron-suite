@@ -5,8 +5,8 @@ const TRANSPARENT_BG = "\x1b[49m";
 const TRANSPARENT_RESET = `${RESET}${TRANSPARENT_BG}`;
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 const WRAP_MARK = "\uE000";
-const PATCH_FLAG = Symbol.for("pi-meron-footer:claude-tool-container-style");
-const ORIGINAL_RENDER = Symbol.for("pi-meron-footer:claude-tool-container-original-render");
+const PATCH_FLAG = Symbol.for("pi-meron-suite:claude-tool-container-style");
+const ORIGINAL_RENDER = Symbol.for("pi-meron-suite:claude-tool-container-original-render");
 
 // Glass UI: subtle vertical accent bar
 const GLASS_BAR = "\x1b[38;2;80;80;80m│\x1b[0m\x1b[49m";
