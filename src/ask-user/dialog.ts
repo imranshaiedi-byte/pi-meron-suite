@@ -169,18 +169,16 @@ export class QuestionnaireDialog {
       return;
     }
 
-    // Space → toggle multi-select
+    // Space → toggle multi-select. Some terminals send a literal space
+    // instead of a parsed Key.space, so accept both.
     const q = this.params.questions[this.currentTab];
-    if (q?.multiSelect && matchesKey(data, Key.space)) {
+    if (q?.multiSelect && (matchesKey(data, Key.space) || data === " ")) {
       const list = this.getSelectList(this.currentTab);
       const item = list?.getSelectedItem();
       if (item) {
         const row = this.optionRows[this.currentTab]?.find((r) => r.label === item.value);
         if (row?.kind === "option" && row.optionIndex !== undefined) {
-          const sel = this.multiSelected[this.currentTab];
-          if (sel.has(row.optionIndex)) sel.delete(row.optionIndex);
-          else sel.add(row.optionIndex);
-          this.tui.requestRender();
+          this.toggleMultiSelection(this.currentTab, row.optionIndex);
           return;
         }
       }
@@ -253,12 +251,9 @@ export class QuestionnaireDialog {
       case "option": {
         if (question.multiSelect) {
           // Toggle and stay
-          const sel = this.multiSelected[questionIndex];
           if (row.optionIndex !== undefined) {
-            if (sel.has(row.optionIndex)) sel.delete(row.optionIndex);
-            else sel.add(row.optionIndex);
+            this.toggleMultiSelection(questionIndex, row.optionIndex);
           }
-          this.tui.requestRender();
         } else {
           // Single-select: record and advance
           this.singleAnswers[questionIndex] = row.label;
@@ -318,6 +313,17 @@ export class QuestionnaireDialog {
     this.phase = "questions";
     this.inputComponent = undefined;
     this.inputContainer = undefined;
+    this.tui.requestRender();
+  }
+
+  private toggleMultiSelection(questionIndex: number, optionIndex: number): void {
+    const sel = this.multiSelected[questionIndex];
+    if (sel.has(optionIndex)) sel.delete(optionIndex);
+    else sel.add(optionIndex);
+
+    // SelectList item labels contain the checkbox glyph, so rebuild the list
+    // after each toggle or the UI keeps showing the stale unchecked row.
+    this.selectLists[questionIndex] = null;
     this.tui.requestRender();
   }
 
