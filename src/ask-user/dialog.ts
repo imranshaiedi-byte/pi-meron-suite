@@ -127,8 +127,8 @@ export class QuestionnaireDialog {
     this.params = opts.params;
     this.done = opts.done;
 
-    const n = params.questions.length;
-    this.optionRows = params.questions.map(buildOptionRows);
+    const n = this.params.questions.length;
+    this.optionRows = this.params.questions.map(buildOptionRows);
     this.singleAnswers = new Array(n).fill(null);
     this.multiSelected = Array.from({ length: n }, () => new Set<number>());
     this.previewTexts = new Array(n).fill(undefined);

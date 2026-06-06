@@ -92,21 +92,62 @@ Preview content is rendered as markdown in a monospace box. Multi-line text with
     parameters: QuestionParamsSchema,
 
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      // Minimal test - just return a static response
-      console.log("[ask_user_question] execute called with params:", params);
-      
-      if (!params || typeof params !== 'object') {
-        return {
-          content: [{ type: "text", text: "Error: Invalid parameters" }],
-          details: { answers: [], cancelled: true },
-        };
+      if (!params || typeof params !== "object") {
+        return buildToolResult("Error: Invalid parameters", {
+          answers: [],
+          cancelled: true,
+          error: "no_questions",
+        });
       }
 
-      // For now, just return a test response
-      return {
-        content: [{ type: "text", text: "Test response - tool is working" }],
-        details: { answers: [], cancelled: false },
-      };
+      const typed = params as unknown as QuestionParams;
+      if (!ctx.hasUI) {
+        return buildToolResult("Error: UI not available (running in non-interactive mode)", {
+          answers: [],
+          cancelled: true,
+          error: "no_ui",
+        });
+      }
+
+      const validation = validateQuestionnaire(typed);
+      if (!validation.ok) {
+        return buildToolResult(validation.message, {
+          answers: [],
+          cancelled: true,
+          error: validation.error,
+        });
+      }
+
+      try {
+        const result = await ctx.ui.custom<QuestionnaireResult | null>(
+          (tui, theme, _kb, done) => {
+            const dialog = new QuestionnaireDialog({
+              tui,
+              theme,
+              params: typed,
+              done,
+            });
+            return dialog.component;
+          },
+          {
+            overlay: true,
+            overlayOptions: {
+              anchor: "bottom-center",
+              width: "100%",
+              maxHeight: "100%",
+              margin: { left: 0, right: 0, bottom: 0 },
+            },
+          },
+        );
+
+        return buildQuestionnaireResponse(result, typed);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return buildToolResult(`Error: ${errorMessage}`, {
+          answers: [],
+          cancelled: true,
+        });
+      }
     },
 
     renderCall(args, theme, context) {
