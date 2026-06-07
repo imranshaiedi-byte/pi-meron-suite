@@ -9,8 +9,8 @@ const PATCH_FLAG = Symbol.for("pi-meron-suite:claude-tool-container-style");
 const ORIGINAL_RENDER = Symbol.for("pi-meron-suite:claude-tool-container-original-render");
 
 // Glass UI: subtle vertical accent bar
-const GLASS_BAR = "\x1b[38;2;80;80;80m│\x1b[0m\x1b[49m";
-const TOOL_RULE = "\x1b[38;2;100;100;100m";
+const GLASS_BAR = "\x1b[38;2;70;80;95m│\x1b[0m\x1b[49m";
+const TOOL_RULE = "\x1b[38;2;90;95;105m";
 const GLASS_PREFIX_W = 2;
 
 export interface RenderThemeLike {
@@ -115,13 +115,15 @@ function statusDot(ctx: ToolContextLike | undefined, theme: RenderThemeLike): st
   const status = getState(ctx)?._toolStatus;
   if (status === "success") return `${theme.fg("success", "●")} `;
   if (status === "error") return `${theme.fg("error", "●")} `;
-  return `${theme.fg("text", "●")} `;
+  if (status === "pending") return `${theme.fg("dim", "●")} `;
+  return `${theme.fg("muted", "●")} `;
 }
 
 export function toolHeader(tool: string, summary: string, theme: RenderThemeLike, ctx?: ToolContextLike): string {
   syncToolStatus(ctx);
   const label = theme.fg("toolTitle", theme.bold(tool));
-  return summary ? `${statusDot(ctx, theme)}${label} ${WRAP_MARK}${theme.fg("accent", summary)}` : `${statusDot(ctx, theme)}${label}`;
+  const separator = summary ? " → " : "";
+  return summary ? `${statusDot(ctx, theme)}${label}${separator}${WRAP_MARK}${theme.fg("accent", summary)}` : `${statusDot(ctx, theme)}${label}`;
 }
 
 function branchIndent(text: string, continued = false): string {

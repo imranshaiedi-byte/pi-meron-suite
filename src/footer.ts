@@ -121,18 +121,32 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 			render(width: number): string[] {
 				const innerWidth = Math.max(0, width - LEFT_PAD - RIGHT_PAD);
 
-				let leftSide = compactCwd(ctx.sessionManager.getCwd());
+				// Build left side with visual hierarchy
+				const cwd = theme.fg("text", compactCwd(ctx.sessionManager.getCwd()));
+				const separator = theme.fg("dim", " • ");
+				
+				let leftSide = cwd;
 				const sessionName = ctx.sessionManager.getSessionName();
-				if (sessionName) leftSide += ` • ${sessionName}`;
+				if (sessionName) {
+					leftSide += separator + theme.fg("muted", sessionName);
+				}
 
 				const branch = footerData.getGitBranch();
-				if (branch) leftSide += ` • ${branch}`;
+				if (branch) {
+					leftSide += separator + theme.fg("accent", ` ${branch}`);
+				}
 
-				const rightSide = [modelLabel(ctx), pi.getThinkingLevel(), renderContextUsage(ctx, theme), renderCost(ctx)].join(" • ");
+				// Build right side with visual hierarchy
+				const model = theme.fg("accent", modelLabel(ctx));
+				const thinking = theme.fg("muted", pi.getThinkingLevel());
+				const context = renderContextUsage(ctx, theme);
+				const cost = theme.fg("text", renderCost(ctx));
+				
+				const rightSide = [model, thinking, context, cost].join(separator);
 
 				return responsiveFooterLines(
-					theme.fg("text", leftSide),
-					theme.fg("text", rightSide),
+					leftSide,
+					rightSide,
 					width,
 					innerWidth,
 				);

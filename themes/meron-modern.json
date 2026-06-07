@@ -1,0 +1,81 @@
+{
+  "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+  "name": "meron-modern",
+  "vars": {
+    "black": "#000000",
+    "surface": "#0a0a0f",
+    "panel": "#12121a",
+    "selected": "#1a1a24",
+    "border": "#2a2a35",
+    "white": "#e4e4e7",
+    "cyan": "#06b6d4",
+    "purple": "#a855f7",
+    "green": "#4ade80",
+    "red": "#f87171",
+    "amber": "#fbbf24"
+  },
+  "colors": {
+    "accent": "cyan",
+    "border": "border",
+    "borderAccent": "cyan",
+    "borderMuted": "#1e1e28",
+    "success": "green",
+    "error": "red",
+    "warning": "amber",
+    "muted": "#a1a1aa",
+    "dim": "#52525b",
+    "text": "white",
+    "thinkingText": "muted",
+
+    "selectedBg": "selected",
+    "userMessageBg": "surface",
+    "userMessageText": "white",
+    "customMessageBg": "panel",
+    "customMessageText": "white",
+    "customMessageLabel": "purple",
+    "toolPendingBg": "#14141c",
+    "toolSuccessBg": "#121814",
+    "toolErrorBg": "#1a1214",
+    "toolTitle": "white",
+    "toolOutput": "#d4d4d8",
+
+    "mdHeading": "cyan",
+    "mdLink": "cyan",
+    "mdLinkUrl": "muted",
+    "mdCode": "purple",
+    "mdCodeBlock": "white",
+    "mdCodeBlockBorder": "border",
+    "mdQuote": "muted",
+    "mdQuoteBorder": "border",
+    "mdHr": "border",
+    "mdListBullet": "cyan",
+
+    "toolDiffAdded": "green",
+    "toolDiffRemoved": "red",
+    "toolDiffContext": "muted",
+
+    "syntaxComment": "dim",
+    "syntaxKeyword": "cyan",
+    "syntaxFunction": "#60a5fa",
+    "syntaxVariable": "white",
+    "syntaxString": "green",
+    "syntaxNumber": "purple",
+    "syntaxType": "cyan",
+    "syntaxOperator": "muted",
+    "syntaxPunctuation": "dim",
+
+    "thinkingOff": "dim",
+    "thinkingMinimal": "cyan",
+    "thinkingLow": "#06b6d4",
+    "thinkingMedium": "#a855f7",
+    "thinkingHigh": "#f472b6",
+    "thinkingXhigh": "red",
+
+    "bashMode": "amber"
+  },
+  "export": {
+    "pageBg": "#0a0a0f",
+    "cardBg": "#12121a",
+    "infoBg": "#1a1a24"
+  }
+}

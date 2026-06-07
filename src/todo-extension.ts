@@ -697,7 +697,30 @@ class TodoOverlay {
 
     const taskCounts = counts({ tasks, nextId: state.nextId });
     const hasActive = taskCounts.inProgress > 0;
-    const heading = `${theme.fg(hasActive ? "accent" : "muted", hasActive ? "●" : "○")} ${theme.fg(hasActive ? "accent" : "muted", `Todos (${taskCounts.completed}/${taskCounts.total})`)}`;
+    
+    // Calculate progress percentage
+    const progressPercent = taskCounts.total > 0 ? (taskCounts.completed / taskCounts.total) * 100 : 0;
+    const progressBarWidth = 10;
+    const filledBars = Math.round((progressPercent / 100) * progressBarWidth);
+    const emptyBars = progressBarWidth - filledBars;
+    
+    // Build progress bar
+    const filledBar = theme.fg("accent", "█".repeat(filledBars));
+    const emptyBar = theme.fg("dim", "░".repeat(emptyBars));
+    const progressBar = `[${filledBar}${emptyBar}] ${Math.round(progressPercent)}%`;
+    
+    // Build heading with progress
+    const statusIcon = theme.fg(hasActive ? "accent" : "muted", hasActive ? "●" : "○");
+    const title = theme.fg("text", theme.bold("Todos"));
+    const countInfo = theme.fg("muted", `${taskCounts.completed}/${taskCounts.total}`);
+    
+    // Status breakdown
+    const statusParts: string[] = [];
+    if (taskCounts.inProgress > 0) statusParts.push(theme.fg("warning", `${taskCounts.inProgress} active`));
+    if (taskCounts.pending > 0) statusParts.push(theme.fg("muted", `${taskCounts.pending} pending`));
+    const statusBreakdown = statusParts.length > 0 ? ` · ${statusParts.join(" · ")}` : "";
+    
+    const heading = `${statusIcon} ${title} ${countInfo} ${progressBar}${statusBreakdown}`;
     const lines = [truncateToWidth(heading, width, "…")];
 
     const roots = buildTaskTree(tasks);
@@ -705,8 +728,8 @@ class TodoOverlay {
     const visible = flat.slice(0, MAX_WIDGET_LINES - 1);
     const hidden = flat.length - visible.length;
 
-    const branchFn = (text: string) => theme.fg("muted", text);
-    const contFn = (text: string) => theme.fg("muted", text);
+    const branchFn = (text: string) => theme.fg("dim", text);
+    const contFn = (text: string) => theme.fg("dim", text);
 
     for (const entry of visible) {
       const prefix = treePrefix(entry, branchFn, contFn);
@@ -716,7 +739,7 @@ class TodoOverlay {
       }
     }
     if (hidden > 0) {
-      lines.push(truncateToWidth(`${theme.fg("muted", "└─")} ${theme.fg("muted", `+${hidden} more`)}`, width, "…"));
+      lines.push(truncateToWidth(`${theme.fg("dim", "└─")} ${theme.fg("muted", `+${hidden} more`)}`, width, "…"));
     }
     return lines;
   }
