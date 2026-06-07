@@ -67,6 +67,30 @@ function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function displayToolName(toolName: string): string {
+  const normalized = toolName.toLowerCase();
+  const labels: Record<string, string> = {
+    ask_user_question: "Ask",
+    web_search: "Search",
+    web_fetch: "Fetch",
+  };
+  return labels[normalized] ?? capitalize(toolName.replace(/_/g, " "));
+}
+
+function normalizePanelLine(toolName: string, line: string): string {
+  const normalizedTool = toolName.toLowerCase();
+  const plain = stripAnsi(line).trimStart();
+  const leading = line.slice(0, line.length - line.trimStart().length);
+
+  if (normalizedTool === "web_search" && plain.startsWith("WebSearch ")) {
+    return `${leading}${plain.slice("WebSearch ".length)}`;
+  }
+  if (normalizedTool === "web_fetch" && plain.startsWith("WebFetch ")) {
+    return `${leading}${plain.slice("WebFetch ".length)}`;
+  }
+  return line;
+}
+
 function getStatus(container: any): string {
   if (container.state && typeof container.state === "object" && "_toolStatus" in container.state) {
     return container.state._toolStatus as string;
@@ -79,7 +103,7 @@ function toolChrome(text: string): string {
 }
 
 function buildTopBorder(toolName: string, _status: string, width: number): string {
-  const badge = ` ${capitalize(toolName)} `;
+  const badge = ` ${displayToolName(toolName)} `;
   const badgeWidth = visibleWidth(badge);
   const fixedVisibleWidth = 2 + badgeWidth + 1 + 2; // ╭─, badge, ●, ─╮
   const fillVisibleWidth = Math.max(0, width - fixedVisibleWidth);
@@ -141,7 +165,7 @@ export function patchToolContainerStyle(): void {
     }
 
     const core = rendered.slice(start, end + 1).map((line) => {
-      const normalized = normalizeLeadingCheckGlyph(line);
+      const normalized = normalizePanelLine(this.toolName, normalizeLeadingCheckGlyph(line));
       const clamped = clampLineWidth(normalized, innerWidth);
       return wrapLineWithBorders(clamped, innerWidth);
     });
