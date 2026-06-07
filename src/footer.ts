@@ -128,23 +128,22 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 			render(width: number): string[] {
 				const innerWidth = Math.max(0, width - LEFT_PAD - RIGHT_PAD);
 
-				// Build left side with visual hierarchy
+				// Build left side: cwd | session | branch
+				const pipe = theme.fg("dim", " | ");
 				const cwd = theme.fg("text", compactCwd(ctx.sessionManager.getCwd()));
-				const separator = theme.fg("dim", " • ");
 				
 				let leftSide = cwd;
 				const sessionName = ctx.sessionManager.getSessionName();
 				if (sessionName) {
-					leftSide += separator + theme.fg("muted", sessionName);
+					leftSide += pipe + theme.fg("muted", sessionName);
 				}
 
 				const branch = footerData.getGitBranch();
 				if (branch) {
-					leftSide += separator + theme.fg("accent", ` ${branch}`);
+					leftSide += pipe + theme.fg("accent", branch);
 				}
 
 				// Build right side: model | thinking | Context: [bar] XX% │ $cost
-				const pipe = theme.fg("dim", " | ");
 				const model = theme.fg("accent", modelLabel(ctx));
 				const thinking = theme.fg("muted", pi.getThinkingLevel());
 				const contextBar = renderContextBar(ctx, theme);
