@@ -20,15 +20,6 @@ type FooterData = {
 	onBranchChange: (listener: () => void) => () => void;
 };
 
-function formatTokens(count: number): string {
-	if (!Number.isFinite(count) || count <= 0) return "?";
-	if (count < 1_000) return String(count);
-	if (count < 10_000) return `${(count / 1_000).toFixed(1)}k`;
-	if (count < 1_000_000) return `${Math.round(count / 1_000)}k`;
-	if (count < 10_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-	return `${Math.round(count / 1_000_000)}M`;
-}
-
 function padLine(line: string, width: number, innerWidth: number): string {
 	if (width <= 0) return "";
 

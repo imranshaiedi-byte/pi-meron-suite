@@ -7,6 +7,7 @@ const WHITE = "\x1b[38;2;255;255;255m";
 const CHROME_RESET = `${RESET}${TRANSPARENT_BG}`;
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 const PATCH_OWNER = "pi-meron-suite:user-message-box";
+const CONTENT_PAD = 1;
 
 interface PatchableUserMessagePrototype {
   render(width: number): string[];
@@ -40,12 +41,14 @@ function buildTopBorder(width: number): string {
 }
 
 function buildBottomBorder(width: number): string {
-  const innerWidth = Math.max(0, width - 2);
-  return chrome(`╰${"─".repeat(innerWidth)}╯`);
+  const fillWidth = Math.max(0, width - 4);
+  const fill = "─".repeat(fillWidth);
+  return chrome(`╰─${fill}─╯`);
 }
 
-function wrapLine(line: string, innerWidth: number): string {
-  return `${chrome("│")}${padToWidth(line, innerWidth)}${chrome("│")}`;
+function wrapLine(line: string, contentWidth: number): string {
+  const pad = " ".repeat(CONTENT_PAD);
+  return `${chrome("│")}${pad}${padToWidth(line, contentWidth)}${pad}${chrome("│")}`;
 }
 
 function trimBlankEdges(lines: string[]): string[] {
@@ -75,15 +78,15 @@ function patchUserMessagePrototype(): void {
       return originalRender.call(this, safeWidth);
     }
 
-    const innerWidth = Math.max(1, safeWidth - 2);
-    const rendered = originalRender.call(this, innerWidth);
+    const contentWidth = Math.max(1, safeWidth - 2 - CONTENT_PAD * 2);
+    const rendered = originalRender.call(this, contentWidth);
     const content = trimBlankEdges(Array.isArray(rendered) ? rendered : []);
     const body = content.length > 0 ? content : [""];
 
     return [
       "",
       buildTopBorder(safeWidth),
-      ...body.map((line) => wrapLine(line, innerWidth)),
+      ...body.map((line) => wrapLine(line, contentWidth)),
       buildBottomBorder(safeWidth),
     ];
   };

@@ -9,9 +9,7 @@ const PATCH_FLAG = Symbol.for("pi-meron-suite:claude-tool-container-style");
 const ORIGINAL_RENDER = Symbol.for("pi-meron-suite:claude-tool-container-original-render");
 
 // Tool chrome is intentionally hardcoded white so grayscale-v5 stays truly grayscale.
-const GLASS_BAR = "\x1b[38;2;255;255;255m│\x1b[0m\x1b[49m";
 const TOOL_RULE = "\x1b[38;2;255;255;255m";
-const GLASS_PREFIX_W = 2;
 
 export interface RenderThemeLike {
   fg(color: string, text: string): string;
@@ -43,10 +41,6 @@ function isBlankLine(text: string): boolean {
 function clampLineWidth(line: string, width: number): string {
   if (width <= 0) return "";
   return visibleWidth(line) > width ? truncateToWidth(line, width, "") : line;
-}
-
-function borderLine(width: number): string {
-  return `${TOOL_RULE}${"─".repeat(Math.max(1, width))}${TRANSPARENT_RESET}`;
 }
 
 function isHorizontalRuleLine(text: string): boolean {
