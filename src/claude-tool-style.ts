@@ -13,6 +13,13 @@ const GLASS_BAR = "\x1b[38;2;70;80;95m│\x1b[0m\x1b[49m";
 const TOOL_RULE = "\x1b[38;2;90;95;105m";
 const GLASS_PREFIX_W = 2;
 
+// Store the last known theme for use in container rendering
+let lastKnownTheme: RenderThemeLike | null = null;
+
+export function setLastKnownTheme(theme: RenderThemeLike): void {
+  lastKnownTheme = theme;
+}
+
 export interface RenderThemeLike {
   fg(color: string, text: string): string;
   bold(text: string): string;
@@ -74,6 +81,13 @@ function getStatus(container: any): string {
   return "pending";
 }
 
+function extractAnsiFgCode(theme: RenderThemeLike | null, colorName: string, fallback: string): string {
+  if (!theme) return fallback;
+  const sample = theme.fg(colorName, "X");
+  const match = sample.match(/^(\x1b\[[0-9;]+m)/);
+  return match ? match[1] : fallback;
+}
+
 function buildTopBorder(toolName: string, status: string, width: number): string {
   const badge = ` ${capitalize(toolName)} `;
   const badgeWidth = visibleWidth(badge);
@@ -82,10 +96,16 @@ function buildTopBorder(toolName: string, status: string, width: number): string
   const fill = "─".repeat(fillVisibleWidth);
   
   const borderColor = TOOL_RULE;
-  const badgeColor = "\x1b[38;2;6;182;212m"; // cyan accent
-  const statusColor = status === "success" ? "\x1b[38;2;74;222;128m" : 
-                      status === "error" ? "\x1b[38;2;248;113;113m" : 
-                      "\x1b[38;2;113;113;122m"; // dim
+  
+  // Use theme-aware colors when available, fallback to hardcoded
+  const badgeColor = extractAnsiFgCode(lastKnownTheme, "accent", "\x1b[38;2;6;182;212m");
+  const successColor = extractAnsiFgCode(lastKnownTheme, "success", "\x1b[38;2;74;222;128m");
+  const errorColor = extractAnsiFgCode(lastKnownTheme, "error", "\x1b[38;2;248;113;113m");
+  const dimColor = extractAnsiFgCode(lastKnownTheme, "dim", "\x1b[38;2;113;113;122m");
+  
+  const statusColor = status === "success" ? successColor : 
+                      status === "error" ? errorColor : 
+                      dimColor;
   
   return `${borderColor}╭─${RESET}${badgeColor}${badge}${RESET}${borderColor}${fill}${statusColor}●${borderColor}─╮${TRANSPARENT_RESET}`;
 }

@@ -1341,6 +1341,7 @@ export function registerToolDisplayOverrides(
         return executeBuiltInTool(bootstrapTools.read, toolCallId, params, signal, onUpdate, ctx);
       },
       renderCall(args, theme, context) {
+        setLastKnownTheme(theme);
         const path = shortenPath(getToolPathArg(args));
         const offset = getNumericField(args, "offset");
         const limit = getNumericField(args, "limit");
@@ -1400,6 +1401,7 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.grep, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
+      setLastKnownTheme(theme);
       const scope = shortenPath(args.path || ".");
       const globSuffix = args.glob ? ` (${args.glob})` : "";
       const limitSuffix = args.limit !== undefined ? ` limit ${args.limit}` : "";
@@ -1469,6 +1471,7 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.ls, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
+      setLastKnownTheme(theme);
       const scope = shortenPath(args.path || ".");
       const limitSuffix = args.limit !== undefined ? ` (limit ${args.limit})` : "";
       return styledText(context, toolHeader("List", `${scope}${limitSuffix}`, theme, context));
@@ -1504,6 +1507,7 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.edit, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
+      setLastKnownTheme(theme);
       const path = shortenPath(getToolPathArg(args));
       const lineCount = getEditLineCount(args);
       syncToolStatus(context);
@@ -1566,6 +1570,7 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.write, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
+      setLastKnownTheme(theme);
       const content = getToolContentArg(args);
       const lineCount = countWriteContentLines(content);
       const sizeBytes = getWriteContentSizeBytes(content);
@@ -1639,6 +1644,7 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.bash, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
+      setLastKnownTheme(theme);
       const command = getStringField(args, "command") ?? "";
       const flattened = command.replace(/\\\s*\n/g, " ").replace(/\s+/g, " ").trim();
       if (context?.expanded) {
