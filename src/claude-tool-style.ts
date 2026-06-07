@@ -81,11 +81,14 @@ function getStatus(container: any): string {
   return "pending";
 }
 
-function extractAnsiFgCode(theme: RenderThemeLike | null, colorName: string, fallback: string): string {
-  if (!theme) return fallback;
-  const sample = theme.fg(colorName, "X");
-  const match = sample.match(/^(\x1b\[[0-9;]+m)/);
-  return match ? match[1] : fallback;
+function themed(color: string, text: string): string {
+  return lastKnownTheme ? lastKnownTheme.fg(color, text) : `${TOOL_RULE}${text}${TRANSPARENT_RESET}`;
+}
+
+function statusGlyph(status: string): string {
+  if (status === "success") return themed("success", "●");
+  if (status === "error") return themed("error", "●");
+  return themed("dim", "●");
 }
 
 function buildTopBorder(toolName: string, status: string, width: number): string {
@@ -94,31 +97,19 @@ function buildTopBorder(toolName: string, status: string, width: number): string
   const fixedVisibleWidth = 2 + badgeWidth + 1 + 2; // ╭─, badge, ●, ─╮
   const fillVisibleWidth = Math.max(0, width - fixedVisibleWidth);
   const fill = "─".repeat(fillVisibleWidth);
-  
-  const borderColor = TOOL_RULE;
-  
-  // Use theme-aware colors when available, fallback to hardcoded
-  const badgeColor = extractAnsiFgCode(lastKnownTheme, "accent", "\x1b[38;2;6;182;212m");
-  const successColor = extractAnsiFgCode(lastKnownTheme, "success", "\x1b[38;2;74;222;128m");
-  const errorColor = extractAnsiFgCode(lastKnownTheme, "error", "\x1b[38;2;248;113;113m");
-  const dimColor = extractAnsiFgCode(lastKnownTheme, "dim", "\x1b[38;2;113;113;122m");
-  
-  const statusColor = status === "success" ? successColor : 
-                      status === "error" ? errorColor : 
-                      dimColor;
-  
-  return `${borderColor}╭─${RESET}${badgeColor}${badge}${RESET}${borderColor}${fill}${statusColor}●${borderColor}─╮${TRANSPARENT_RESET}`;
+
+  return `${themed("border", "╭─")}${themed("accent", badge)}${themed("border", fill)}${statusGlyph(status)}${themed("border", "─╮")}`;
 }
 
 function buildBottomBorder(width: number): string {
   const fillWidth = Math.max(0, width - 4);
   const fill = "─".repeat(fillWidth);
-  return `${TOOL_RULE}╰─${fill}─╯${TRANSPARENT_RESET}`;
+  return themed("border", `╰─${fill}─╯`);
 }
 
 function wrapLineWithBorders(line: string, innerWidth: number): string {
   const paddedLine = padToWidth(line, innerWidth);
-  return `${TOOL_RULE}│${TRANSPARENT_RESET}${paddedLine}${TOOL_RULE}│${TRANSPARENT_RESET}`;
+  return `${themed("border", "│")}${paddedLine}${themed("border", "│")}`;
 }
 
 export function patchToolContainerStyle(): void {
@@ -210,12 +201,12 @@ export function toolHeader(tool: string, summary: string, theme: RenderThemeLike
 }
 
 function branchIndent(text: string, continued = false): string {
-  const prefix = continued ? `${TOOL_RULE}│${TRANSPARENT_RESET}  ` : "   ";
+  const prefix = continued ? `${themed("border", "│")}  ` : "   ";
   return `${prefix}${WRAP_MARK}${text}`;
 }
 
 function branchLead(text: string, continued = false): string {
-  return `${TOOL_RULE}${continued ? "├─" : "└─"}${TRANSPARENT_RESET} ${WRAP_MARK}${text}`;
+  return `${themed("border", continued ? "├─" : "└─")} ${WRAP_MARK}${text}`;
 }
 
 export function withBranch(content: string, continued = false): string {
@@ -244,7 +235,7 @@ function padToWidth(line: string, width: number): string {
 function markedContinuationPrefix(prefix: string): string {
   const plain = stripAnsi(prefix);
   const branchMatch = /^(\s*)(?:│  |├─ |└─ )/.exec(plain);
-  if (branchMatch) return `${branchMatch[1]}${TOOL_RULE}│${TRANSPARENT_RESET}  `;
+  if (branchMatch) return `${branchMatch[1]}${themed("border", "│")}  `;
   return " ".repeat(visibleWidth(prefix));
 }
 
