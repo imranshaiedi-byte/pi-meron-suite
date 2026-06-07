@@ -30,9 +30,9 @@
     "thinkingText": "muted",
 
     "selectedBg": "selected",
-    "userMessageBg": "surface",
+    "userMessageBg": "#0f0f16",
     "userMessageText": "white",
-    "customMessageBg": "panel",
+    "customMessageBg": "#14141e",
     "customMessageText": "white",
     "customMessageLabel": "purple",
     "toolPendingBg": "#14141c",

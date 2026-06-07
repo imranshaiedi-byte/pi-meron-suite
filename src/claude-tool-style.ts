@@ -63,6 +63,44 @@ function normalizeLeadingCheckGlyph(line: string): string {
   return line.replace(/^((?:\x1b\[[0-9;]*m|[ \t])*)[✓✔](?=\s)/, "$1●");
 }
 
+function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function getStatus(container: any): string {
+  if (container.state && typeof container.state === "object" && "_toolStatus" in container.state) {
+    return container.state._toolStatus as string;
+  }
+  return "pending";
+}
+
+function buildTopBorder(toolName: string, status: string, width: number): string {
+  const badge = ` ${capitalize(toolName)} `;
+  const badgeWidth = visibleWidth(badge);
+  const fixedVisibleWidth = 2 + badgeWidth + 1 + 2; // ╭─, badge, ●, ─╮
+  const fillVisibleWidth = Math.max(0, width - fixedVisibleWidth);
+  const fill = "─".repeat(fillVisibleWidth);
+  
+  const borderColor = TOOL_RULE;
+  const badgeColor = "\x1b[38;2;6;182;212m"; // cyan accent
+  const statusColor = status === "success" ? "\x1b[38;2;74;222;128m" : 
+                      status === "error" ? "\x1b[38;2;248;113;113m" : 
+                      "\x1b[38;2;113;113;122m"; // dim
+  
+  return `${borderColor}╭─${RESET}${badgeColor}${badge}${RESET}${borderColor}${fill}${statusColor}●${borderColor}─╮${TRANSPARENT_RESET}`;
+}
+
+function buildBottomBorder(width: number): string {
+  const fillWidth = Math.max(0, width - 4);
+  const fill = "─".repeat(fillWidth);
+  return `${TOOL_RULE}╰─${fill}─╯${TRANSPARENT_RESET}`;
+}
+
+function wrapLineWithBorders(line: string, innerWidth: number): string {
+  const paddedLine = padToWidth(line, innerWidth);
+  return `${TOOL_RULE}│${TRANSPARENT_RESET}${paddedLine}${TOOL_RULE}│${TRANSPARENT_RESET}`;
+}
+
 export function patchToolContainerStyle(): void {
   const proto = Container.prototype as unknown as Record<PropertyKey, unknown>;
   const currentRender = proto.render;
@@ -72,23 +110,49 @@ export function patchToolContainerStyle(): void {
   proto[ORIGINAL_RENDER] = originalRender;
 
   proto.render = function patchedContainerRender(this: unknown, width: number): string[] {
-    const rendered = (originalRender as (this: unknown, width: number) => string[]).call(this, width);
-    if (!Array.isArray(rendered) || rendered.length === 0 || !isToolExecutionLike(this)) return rendered;
+    // Not a tool execution, use original render
+    if (!isToolExecutionLike(this)) {
+      return (originalRender as (this: unknown, width: number) => string[]).call(this, width);
+    }
 
+    // Tool execution: render content at reduced width for panel borders
+    const innerWidth = Math.max(1, width - 2);
+    const rendered = (originalRender as (this: unknown, width: number) => string[]).call(this, innerWidth);
+    
+    if (!Array.isArray(rendered) || rendered.length === 0) {
+      return [
+        buildTopBorder(this.toolName, getStatus(this), width),
+        buildBottomBorder(width)
+      ];
+    }
+
+    // Trim blank lines and horizontal rules
     let start = 0;
     while (start < rendered.length && isBlankLine(rendered[start] ?? "")) start++;
     let end = rendered.length - 1;
     while (end >= start && isBlankLine(rendered[end] ?? "")) end--;
-
-    // If /reload replaces an older patch, strip its old horizontal rules before
-    // adding the current theme-matched rules.
     while (start <= end && isHorizontalRuleLine(rendered[start] ?? "")) start++;
     while (end >= start && isHorizontalRuleLine(rendered[end] ?? "")) end--;
-    if (start > end) return rendered;
+    
+    if (start > end) {
+      // Empty content, show empty panel
+      return [
+        buildTopBorder(this.toolName, getStatus(this), width),
+        buildBottomBorder(width)
+      ];
+    }
 
-    const core = rendered.slice(start, end + 1).map((line) => clampLineWidth(normalizeLeadingCheckGlyph(line), width));
-    const spacerLine = " ".repeat(Math.max(1, width));
-    return [spacerLine, ...core];
+    const core = rendered.slice(start, end + 1).map((line) => {
+      const normalized = normalizeLeadingCheckGlyph(line);
+      const clamped = clampLineWidth(normalized, innerWidth);
+      return wrapLineWithBorders(clamped, innerWidth);
+    });
+
+    return [
+      buildTopBorder(this.toolName, getStatus(this), width),
+      ...core,
+      buildBottomBorder(width)
+    ];
   };
 
   proto[PATCH_FLAG] = true;
