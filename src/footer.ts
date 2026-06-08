@@ -84,6 +84,40 @@ function renderCost(ctx: any): string {
 	return `$${cost.toFixed(3)}`;
 }
 
+function calcTokenStats(ctx: any): { input: number; output: number; cacheRead: number; cacheWrite: number } {
+	let input = 0, output = 0, cacheRead = 0, cacheWrite = 0;
+	for (const entry of ctx.sessionManager.getEntries()) {
+		if (entry.type === "message" && entry.message.role === "assistant") {
+			input += entry.message.usage?.input ?? 0;
+			output += entry.message.usage?.output ?? 0;
+			cacheRead += entry.message.usage?.cacheRead ?? 0;
+			cacheWrite += entry.message.usage?.cacheWrite ?? 0;
+		}
+	}
+	return { input, output, cacheRead, cacheWrite };
+}
+
+function renderCacheBar(ctx: any, theme: Theme): string {
+	const stats = calcTokenStats(ctx);
+	const totalInput = stats.input + stats.cacheRead;
+
+	if (totalInput === 0) {
+		return theme.fg("muted", "Cache:") + " " + theme.fg("dim", "[??????????]") + " " + theme.fg("dim", "?%");
+	}
+
+	const hitRate = Math.round((stats.cacheRead / totalInput) * 100);
+	const barWidth = 10;
+	const filled = Math.round((hitRate / 100) * barWidth);
+	const empty = barWidth - filled;
+	const barColor = hitRate >= 70 ? "success" : hitRate >= 30 ? "warning" : "error";
+
+	const bar = `[${theme.fg(barColor, "█".repeat(filled))}${theme.fg("dim", "░".repeat(empty))}]`;
+	const label = theme.fg("muted", "Cache:");
+	const pct = `${hitRate}%`;
+
+	return `${label} ${bar} ${pct}`;
+}
+
 function renderContextBar(ctx: any, theme: Theme): string {
 	const usage = ctx.getContextUsage?.();
 	const percent = typeof usage?.percent === "number" ? usage.percent : null;
@@ -134,14 +168,15 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 					leftSide += pipe + theme.fg("accent", branch);
 				}
 
-				// Build right side: model | thinking | Context: [bar] XX% │ $cost
+				// Build right side: model | thinking | Context: [bar] XX% | Cache: [bar] XX% │ $cost
 				const model = theme.fg("accent", modelLabel(ctx));
 				const thinking = theme.fg("muted", pi.getThinkingLevel());
 				const contextBar = renderContextBar(ctx, theme);
 				const cost = theme.fg("text", renderCost(ctx));
 				const costSep = theme.fg("dim", " │ ");
+				const cacheBar = renderCacheBar(ctx, theme);
 				
-				const rightSide = `${model}${pipe}${thinking}${pipe}${contextBar}${costSep}${cost}`;
+				const rightSide = `${model}${pipe}${thinking}${pipe}${contextBar}${pipe}${cacheBar}${costSep}${cost}`;
 
 				return responsiveFooterLines(
 					leftSide,

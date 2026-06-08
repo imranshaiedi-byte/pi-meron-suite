@@ -7,7 +7,7 @@ A comprehensive pi extension suite providing footer/status bar, tool display ove
 ### Footer
 Clean padded footer/status bar showing:
 - Current working directory, session name, and git branch
-- Model provider/id, thinking level, context usage, and session cost
+- Model provider/id, thinking level, context usage, session cost, and cache hit rate bar
 
 ### Tool Display Overrides
 Compact, human-readable rendering for built-in tools:
