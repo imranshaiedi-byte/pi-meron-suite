@@ -15,24 +15,6 @@ Compact, human-readable rendering for built-in tools:
 - Status dots, branch-style summaries, and diff previews
 - Clean headers like `● **Read** src/file.ts (42 lines loaded)` instead of raw tool names
 
-### Thinking Pulse
-A flicker-free live indicator for active thinking, shown in the footer.
-
-When reasoning tokens are streaming, the footer's thinking segment shows a
-spinner and a running token estimate instead of the resting thinking level:
-
-```
-... | claude… | ⠹ thinking… ~1,284 | Context: 12% | ...
-```
-
-- The spinner advances **only when token deltas actually arrive** — so it can
-  never lie about activity. If it freezes mid-response, the model is paused.
-- The token estimate ticks up alongside it.
-- When thinking ends (or text/tool-calls begin), the segment reverts to the
-  normal thinking level.
-- Zero extra repaints: it reads shared state on the footer's natural streaming
-  repaints, so there's no flicker even on long sessions.
-
 ## Installation
 
 ```bash

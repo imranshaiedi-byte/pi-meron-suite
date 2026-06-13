@@ -1,6 +1,6 @@
 {
   "name": "pi-meron-suite",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Meron suite — footer and tool display overrides for pi",
   "type": "module",
   "pi": {

@@ -6,7 +6,6 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { thinkingPulse } from "./thinking-state.js";
 
 const LEFT_PAD = 3;
 const RIGHT_PAD = 3;
@@ -157,17 +156,7 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 
 				// Build right side: model | thinking | Context: XX% | Cache: XX% | $cost
 				const model = theme.fg("accent", modelLabel(ctx));
-				// Thinking: live pulse while reasoning tokens stream, else the level at rest.
-				// The pulse (spinner + token estimate) rides on the footer's natural
-				// streaming repaints, so it costs nothing extra and never flickers.
-				const pulse = thinkingPulse();
-				const thinking = pulse
-					? theme.fg("accent", pulse.frame) +
-					theme.fg("muted", " thinking\u2026") +
-					(pulse.tokens > 0
-						? theme.fg("accent", ` ~${pulse.tokens.toLocaleString()}`)
-						: "")
-					: theme.fg("muted", pi.getThinkingLevel());
+				const thinking = theme.fg("muted", pi.getThinkingLevel());
 				const contextPct = renderContextPct(ctx, theme);
 				const cachePct = renderCachePct(ctx, theme);
 				const cost = renderCost(ctx, theme);
