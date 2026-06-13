@@ -15,6 +15,23 @@ Compact, human-readable rendering for built-in tools:
 - Status dots, branch-style summaries, and diff previews
 - Clean headers like `● **Read** src/file.ts (42 lines loaded)` instead of raw tool names
 
+### Thinking Pulse
+A live indicator for collapsed thinking blocks.
+
+When reasoning tokens are streaming and thinking is collapsed, the static
+`Thinking...` label is replaced with a spinner and a running token estimate:
+
+```
+⠹ Thinking… ≈1,284 tokens
+```
+
+- A braille spinner animates only while thinking is actively streaming.
+- The token estimate ticks up so you can watch tokens flow in. If it stalls,
+  the model is paused.
+- When thinking ends (or text/tool-calls begin), the label reverts to the
+  default `Thinking...`.
+- Only affects the collapsed view — expanded thinking is untouched.
+
 ## Installation
 
 ```bash
