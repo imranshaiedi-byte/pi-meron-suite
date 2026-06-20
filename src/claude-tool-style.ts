@@ -11,6 +11,14 @@ const ORIGINAL_RENDER = Symbol.for("pi-meron-suite:claude-tool-container-origina
 // Tool chrome is intentionally hardcoded white so grayscale-v5 stays truly grayscale.
 const TOOL_RULE = "\x1b[38;2;255;255;255m";
 
+// Tools that collapse to a single bare line (no panel border) when not expanded.
+const SINGLE_LINE_TOOLS = new Set(["read", "bash", "grep", "find", "ls", "edit", "write"]);
+// Expanded gutter must align with collapsed output. Collapsed lines still pass
+// through the old Box's single left pad before their own " │ " gutter, so the
+// effective visible prefix is "  │ ".
+const SINGLE_LINE_TOOL_GUTTER = "  │ ";
+const SINGLE_LINE_TOOL_GUTTER_PATTERN = /^│\s+●\s/;
+
 export interface RenderThemeLike {
   fg(color: string, text: string): string;
   bold(text: string): string;
@@ -47,10 +55,64 @@ function isHorizontalRuleLine(text: string): boolean {
   return /^─+$/.test(stripAnsi(text).trim());
 }
 
+function isSingleLineToolLine(text: string): boolean {
+  return SINGLE_LINE_TOOL_GUTTER_PATTERN.test(stripAnsi(text).trimStart());
+}
+
+function spaceBeforeToolBlocks(lines: string[]): string[] {
+  if (lines.length === 0) return lines;
+  const out: string[] = [];
+  for (const line of lines) {
+    const isToolLine = isSingleLineToolLine(line);
+    const prev = out[out.length - 1];
+    const prevIsToolLine = prev !== undefined && isSingleLineToolLine(prev);
+    const prevIsBlank = prev === undefined || isBlankLine(prev);
+    if (isToolLine && !prevIsToolLine && !prevIsBlank) {
+      out.push("");
+    }
+    out.push(line);
+  }
+  return out;
+}
+
 function isToolExecutionLike(value: unknown): value is { toolName: string; toolCallId: string } {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   return typeof candidate.toolName === "string" && typeof candidate.toolCallId === "string";
+}
+
+// AssistantMessageComponent (extends Container) is the only block carrying a
+// string `hiddenThinkingLabel`. We detect it to strip the "Thinking..." line.
+function isAssistantMessageLike(
+  value: unknown,
+): value is { hideThinkingBlock?: unknown; hiddenThinkingLabel: string } {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    typeof (value as { hiddenThinkingLabel?: unknown }).hiddenThinkingLabel === "string"
+  );
+}
+
+// Remove the hidden-thinking placeholder line and collapse the leftover blanks
+// down to a single separator line.
+function stripHiddenThinkingLabel(
+  self: { hideThinkingBlock?: unknown; hiddenThinkingLabel: string },
+  lines: string[],
+): string[] {
+  const label = self.hiddenThinkingLabel.trim();
+  if (self.hideThinkingBlock !== true || !label || !Array.isArray(lines)) return lines;
+  const kept = lines.filter((line) => stripAnsi(line).trim() !== label);
+  if (kept.length === lines.length) return lines;
+  const collapsed: string[] = [];
+  for (const line of kept) {
+    const blank = isBlankLine(line);
+    if (blank && collapsed.length > 0 && collapsed[collapsed.length - 1] === "") continue;
+    collapsed.push(blank ? "" : line);
+  }
+  let end = collapsed.length - 1;
+  while (end >= 0 && collapsed[end] === "") end--;
+  const trimmed = collapsed.slice(0, end + 1);
+  return trimmed.length > 0 ? trimmed : [""];
 }
 
 function normalizeLeadingCheckGlyph(line: string): string {
@@ -126,9 +188,50 @@ export function patchToolContainerStyle(): void {
   proto[ORIGINAL_RENDER] = originalRender;
 
   proto.render = function patchedContainerRender(this: unknown, width: number): string[] {
+    // Assistant message with hidden thinking: drop the "Thinking..." placeholder.
+    if (isAssistantMessageLike(this)) {
+      const lines = (originalRender as (this: unknown, width: number) => string[]).call(this, width);
+      return spaceBeforeToolBlocks(stripHiddenThinkingLabel(this, lines));
+    }
+
     // Not a tool execution, use original render
     if (!isToolExecutionLike(this)) {
-      return (originalRender as (this: unknown, width: number) => string[]).call(this, width);
+      const lines = (originalRender as (this: unknown, width: number) => string[]).call(this, width);
+      return spaceBeforeToolBlocks(lines);
+    }
+
+    // Built-in tool overrides render as guttered blocks (collapsed = one line,
+    // expanded = same gutter with body underneath), never as boxed panels.
+    const toolNameLower = String((this as { toolName?: unknown }).toolName ?? "").toLowerCase();
+    const collapsed = (this as { expanded?: unknown }).expanded !== true;
+    if (SINGLE_LINE_TOOLS.has(toolNameLower)) {
+      const bare = (originalRender as (this: unknown, width: number) => string[]).call(this, width);
+      if (!Array.isArray(bare) || bare.length === 0) return [];
+      let s = 0;
+      while (s < bare.length && isBlankLine(bare[s] ?? "")) s++;
+      let e = bare.length - 1;
+      while (e >= s && isBlankLine(bare[e] ?? "")) e--;
+      while (s <= e && isHorizontalRuleLine(bare[s] ?? "")) s++;
+      while (e >= s && isHorizontalRuleLine(bare[e] ?? "")) e--;
+      if (s > e) return [];
+
+      const body = bare.slice(s, e + 1).map((line) => normalizeLeadingCheckGlyph(line));
+      if (collapsed) {
+        return body.map((line) => clampLineWidth(line, width));
+      }
+
+      const innerWidth = Math.max(1, width - visibleWidth(SINGLE_LINE_TOOL_GUTTER));
+      const lines: string[] = [];
+      for (const line of body) {
+        const content = isBlankLine(line)
+          ? ""
+          // Strip only the old Box's single left pad before applying our gutter
+          // so expanded headers align with collapsed lines while preserving body
+          // continuation indentation.
+          : clampLineWidth(line.replace(/^ /, ""), innerWidth);
+        lines.push(`${SINGLE_LINE_TOOL_GUTTER}${content}`);
+      }
+      return lines;
     }
 
     // Tool execution: render content at reduced width for panel borders

@@ -29,9 +29,15 @@ import {
   previewLines,
   sanitizeAnsiForThemedOutput,
   shortenPath,
+  shortenPathRelative,
   splitLines,
 } from "./render-utils.js";
-import { renderEditDiffResult, renderWriteDiffResult } from "./diff-renderer.js";
+import {
+  renderEditDiffResult,
+  renderWriteDiffResult,
+  summarizeEditDiffChanges,
+  summarizeWriteDiffChanges,
+} from "./diff-renderer.js";
 import {
   buildPendingEditPreviewData,
   buildPendingWritePreviewData,
@@ -85,6 +91,7 @@ interface ToolRenderContextLike {
   isError?: boolean;
   isPartial?: boolean;
   expanded?: boolean;
+  cwd?: string;
 }
 
 export interface WriteExecutionMeta {
@@ -235,6 +242,7 @@ function branchText(context: ToolRenderContextLike | undefined, text: string): T
 class DynamicBashHeaderText extends Text {
   private readonly inner = new ToolText();
   private command = "";
+  private metric?: string;
   private theme?: RenderTheme;
   private context?: ToolRenderContextLike;
 
@@ -242,10 +250,11 @@ class DynamicBashHeaderText extends Text {
     super("", 0, 0);
   }
 
-  setData(command: string, theme: RenderTheme, context?: ToolRenderContextLike): void {
+  setData(command: string, theme: RenderTheme, context?: ToolRenderContextLike, metric?: string): void {
     this.command = command;
     this.theme = theme;
     this.context = context;
+    this.metric = metric;
     this.invalidate();
   }
 
@@ -255,10 +264,17 @@ class DynamicBashHeaderText extends Text {
 
   override render(width: number): string[] {
     if (!this.theme) return [];
-    // Leave room for the status dot/tool label and a little wrapping slack.
+    // Call header (no metric): hide once the merged result line takes over.
+    if (this.metric === undefined && this.context && this.context.isPartial === false) {
+      this.inner.setText("");
+      return this.inner.render(width);
+    }
+    // Leave room for the status dot/verb and a little wrapping slack.
     const summaryWidth = Math.max(40, width - 18);
-    const summary = formatCollapsedBashCommand(this.command, this.theme, summaryWidth);
-    this.inner.setText(toolHeader("Bash", summary, this.theme, this.context));
+    const command = formatCollapsedBashCommand(this.command, this.theme, summaryWidth);
+    const head = toolHeader("Bash", verbTarget("Bash", command), this.theme, this.context);
+    const suffix = this.metric ? this.theme.fg("muted", ` · ${this.metric}`) : "";
+    this.inner.setText(`${ONE_LINE_GUTTER}${head}${suffix}`);
     return this.inner.render(width);
   }
 }
@@ -268,6 +284,19 @@ function dynamicBashHeader(context: ToolRenderContextLike | undefined, command: 
     ? context.lastComponent
     : new DynamicBashHeaderText();
   component.setData(command, theme, context);
+  return component;
+}
+
+function dynamicBashResult(
+  context: ToolRenderContextLike | undefined,
+  command: string,
+  metric: string,
+  theme: RenderTheme,
+): Text {
+  const component = context?.lastComponent instanceof DynamicBashHeaderText
+    ? context.lastComponent
+    : new DynamicBashHeaderText();
+  component.setData(command, theme, context, metric);
   return component;
 }
 
@@ -590,8 +619,10 @@ function formatCollapsedBashCommand(
     return `${truncateEndToWidth(rawCommand, MAX_WIDTH - 1)}${theme.fg("muted", "…")}`;
   }
 
-  const contextSuffix = directory ? ` ${theme.fg("muted", `in ${directory}`)}` : "";
-  const hintReserve = 24 + visibleWidth(contextSuffix);
+  // Collapsed Bash stays focused on the command itself. Directory context made
+  // the one-liner read too much like prose ("... in ~/repo").
+  const contextSuffix = "";
+  const hintReserve = 24;
   const actionBudget = Math.max(60, MAX_WIDTH - hintReserve);
   const shown: string[] = [];
   let omitted = 0;
@@ -681,6 +712,49 @@ function renderCollapsedSummary(
   _theme: RenderTheme,
 ): Text {
   return branchText(context, summary);
+}
+
+// Minimal gutter so collapsed tool lines read as tool output, not prose.
+const ONE_LINE_GUTTER = " │ ";
+
+// Verb column: pad verbs so targets line up regardless of verb length.
+const ONE_LINE_VERB_WIDTH = 5; // longest of Read/Bash/Grep/Find/List/Edit/Write
+function verbTarget(verb: string, target: string): string {
+  if (!target) return verb;
+  return `${verb.padEnd(ONE_LINE_VERB_WIDTH)}  ${target}`;
+}
+
+// " in <scope>" suffix for search tools, omitted when the scope is the cwd.
+function searchScopeSuffix(scope: string): string {
+  return scope && scope !== "." ? ` in ${scope}` : "";
+}
+
+// Single bare line: "● Verb  target · metric" (no branch, no panel).
+function oneLineSummary(
+  context: ToolRenderContextLike | undefined,
+  theme: RenderTheme,
+  verb: string,
+  target: string,
+  metric: string,
+): Text {
+  const head = toolHeader(verb, verbTarget(verb, target), theme, context);
+  const suffix = metric ? theme.fg("muted", ` · ${metric}`) : "";
+  return styledText(context, `${ONE_LINE_GUTTER}${head}${suffix}`);
+}
+
+// renderCall for single-line tools. Returns:
+//  - undefined when expanded (caller falls back to the full panel header)
+//  - an empty component once the result is in (the merged line is drawn by renderResult)
+//  - "● Verb target" while the call is still pending
+function oneLineCall(
+  context: ToolRenderContextLike | undefined,
+  theme: RenderTheme,
+  verb: string,
+  target: string,
+): Text | undefined {
+  if (context?.expanded) return undefined;
+  if (context && context.isPartial === false) return styledText(context, "");
+  return oneLineSummary(context, theme, verb, target, "");
 }
 
 export function recordWriteExecutionMeta(
@@ -822,6 +896,14 @@ function formatLineCountSuffix(
   theme: RenderTheme,
 ): string {
   return theme.fg("muted", ` (${lineCount} ${pluralize(lineCount, "line")})`);
+}
+
+function formatChangeMetric(added: number, removed: number): string {
+  if (added === 0 && removed === 0) return "no changes";
+  const parts: string[] = [];
+  if (added > 0) parts.push(`+${added}`);
+  if (removed > 0) parts.push(`−${removed}`);
+  return parts.join(" ");
 }
 
 function formatWriteCallSuffix(
@@ -1098,14 +1180,11 @@ function renderBashErrorResult(
   let text = theme.fg("error", "Command failed");
 
   if (!options.expanded) {
-    let summary = theme.fg("error", "failed");
-    if (lines.length > 0) {
-      summary += theme.fg("muted", ` • ${lines.length} ${pluralize(lines.length, "line")} returned`);
-    }
-    if (config.showTruncationHints) {
-      summary += formatBashTruncationHints(details, theme).replace(/^\n/, " • ");
-    }
-    return renderCollapsedSummary(context, config, summary, theme);
+    const command = getStringField(context?.args, "command") ?? "";
+    const metric = lines.length > 0
+      ? `failed · ${lines.length} ${pluralize(lines.length, "line")}`
+      : "failed";
+    return dynamicBashResult(context, command, metric, theme);
   }
 
   if (lines.length > 0) {
@@ -1133,6 +1212,8 @@ function renderSearchResult(
   details: GrepToolDetails | FindToolDetails | LsToolDetails | undefined,
   pluralLabel?: string,
   context?: ToolRenderContextLike,
+  verb = "",
+  target = "",
 ): Text {
   if (options.isPartial) {
     return styledText(context, "");
@@ -1141,17 +1222,9 @@ function renderSearchResult(
   const lines = prepareOutputLines(extractTextOutput(result), options);
 
   if (!options.expanded) {
-    let summary = formatSearchSummary(
-      lines,
-      unitLabel,
-      details,
-      theme,
-      config.showTruncationHints,
-      pluralLabel,
-    );
-    summary += formatExpandHint(theme);
-    summary += formatRtkSummarySuffix(details, config, theme);
-    return renderCollapsedSummary(context, config, summary, theme);
+    const count = countNonEmptyLines(lines);
+    const metric = `${count} ${pluralize(count, unitLabel, pluralLabel)}`;
+    return oneLineSummary(context, theme, verb, target, metric);
   }
 
   let preview = buildPreviewText(lines, lines.length, theme, true);
@@ -1341,7 +1414,9 @@ export function registerToolDisplayOverrides(
         return executeBuiltInTool(bootstrapTools.read, toolCallId, params, signal, onUpdate, ctx);
       },
       renderCall(args, theme, context) {
-        const path = shortenPath(getToolPathArg(args));
+        const path = shortenPathRelative(getToolPathArg(args), context?.cwd);
+        const oneLine = oneLineCall(context, theme, "Read", path || "...");
+        if (oneLine) return oneLine;
         const offset = getNumericField(args, "offset");
         const limit = getNumericField(args, "limit");
         let suffix = "";
@@ -1351,7 +1426,7 @@ export function registerToolDisplayOverrides(
           if (limit !== undefined) parts.push(`limit=${limit}`);
           suffix = ` ${theme.fg("muted", `(${parts.join(", ")})`)}`;
         }
-        return styledText(context, toolHeader("Read", `${path || "..."}${suffix}`, theme, context));
+        return styledText(context, toolHeader("Read", `${verbTarget("Read", path || "...")}${suffix}`, theme, context));
       },
       renderResult(result, options, theme, context) {
         if (options.isPartial) {
@@ -1367,15 +1442,15 @@ export function registerToolDisplayOverrides(
           const summaryLines = compactOutputLines(splitLines(rawOutput), {
             expanded: true,
           });
-          let summary = formatReadSummary(
-            summaryLines,
-            details,
+          const lineCount = summaryLines.length;
+          const path = shortenPathRelative(getToolPathArg(context?.args), context?.cwd);
+          return oneLineSummary(
+            context,
             theme,
-            config.showTruncationHints,
+            "Read",
+            path || "...",
+            `${lineCount} ${pluralize(lineCount, "line")}`,
           );
-          summary += formatExpandHint(theme);
-          summary += formatRtkSummarySuffix(result.details, config, theme);
-          return renderCollapsedSummary(context, config, summary, theme);
         }
 
         let preview = buildPreviewText(lines, lines.length, theme, true);
@@ -1400,15 +1475,20 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.grep, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
-      const scope = shortenPath(args.path || ".");
+      const scope = shortenPathRelative(args.path || ".", context?.cwd);
+      const oneLine = oneLineCall(context, theme, "Grep", `"${args.pattern}"${searchScopeSuffix(scope)}`);
+      if (oneLine) return oneLine;
       const globSuffix = args.glob ? ` (${args.glob})` : "";
       const limitSuffix = args.limit !== undefined ? ` limit ${args.limit}` : "";
-      return styledText(context, toolHeader("Grep", `"${args.pattern}" in ${scope}${globSuffix}${limitSuffix}`, theme, context));
+      return styledText(context, toolHeader("Grep", `${verbTarget("Grep", `"${args.pattern}"${searchScopeSuffix(scope)}`)}${globSuffix}${limitSuffix}`, theme, context));
     },
     renderResult(result, options, theme, context) {
       if (!options.isPartial) setToolResultStatus(context, context?.isError === true);
       const config = getConfig();
       const details = result.details as GrepToolDetails | undefined;
+      const a = toRecord(context?.args);
+      const scope = shortenPathRelative((a.path as string) || ".", context?.cwd);
+      const target = `"${getStringField(a, "pattern") ?? ""}"${searchScopeSuffix(scope)}`;
       return renderSearchResult(
         result,
         options,
@@ -1418,6 +1498,8 @@ export function registerToolDisplayOverrides(
         details,
         "matches",
         context,
+        "Grep",
+        target,
       );
     },
     });
@@ -1435,14 +1517,19 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.find, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
-      const scope = shortenPath(args.path || ".");
+      const scope = shortenPathRelative(args.path || ".", context?.cwd);
+      const oneLine = oneLineCall(context, theme, "Find", `"${args.pattern}"${searchScopeSuffix(scope)}`);
+      if (oneLine) return oneLine;
       const limitSuffix = args.limit !== undefined ? ` (limit ${args.limit})` : "";
-      return styledText(context, toolHeader("Find", `"${args.pattern}" in ${scope}${limitSuffix}`, theme, context));
+      return styledText(context, toolHeader("Find", `${verbTarget("Find", `"${args.pattern}"${searchScopeSuffix(scope)}`)}${limitSuffix}`, theme, context));
     },
     renderResult(result, options, theme, context) {
       if (!options.isPartial) setToolResultStatus(context, context?.isError === true);
       const config = getConfig();
       const details = result.details as FindToolDetails | undefined;
+      const a = toRecord(context?.args);
+      const scope = shortenPathRelative((a.path as string) || ".", context?.cwd);
+      const target = `"${getStringField(a, "pattern") ?? ""}"${searchScopeSuffix(scope)}`;
       return renderSearchResult(
         result,
         options,
@@ -1452,6 +1539,8 @@ export function registerToolDisplayOverrides(
         details,
         undefined,
         context,
+        "Find",
+        target,
       );
     },
     });
@@ -1469,14 +1558,17 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.ls, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
-      const scope = shortenPath(args.path || ".");
+      const scope = shortenPathRelative(args.path || ".", context?.cwd);
+      const oneLine = oneLineCall(context, theme, "List", scope);
+      if (oneLine) return oneLine;
       const limitSuffix = args.limit !== undefined ? ` (limit ${args.limit})` : "";
-      return styledText(context, toolHeader("List", `${scope}${limitSuffix}`, theme, context));
+      return styledText(context, toolHeader("List", `${verbTarget("List", scope)}${limitSuffix}`, theme, context));
     },
     renderResult(result, options, theme, context) {
       if (!options.isPartial) setToolResultStatus(context, context?.isError === true);
       const config = getConfig();
       const details = result.details as LsToolDetails | undefined;
+      const target = shortenPathRelative((toRecord(context?.args).path as string) || ".", context?.cwd);
       return renderSearchResult(
         result,
         options,
@@ -1486,6 +1578,8 @@ export function registerToolDisplayOverrides(
         details,
         "entries",
         context,
+        "List",
+        target,
       );
     },
     });
@@ -1504,10 +1598,12 @@ export function registerToolDisplayOverrides(
       return executeBuiltInTool(bootstrapTools.edit, toolCallId, params, signal, onUpdate, ctx);
     },
     renderCall(args, theme, context) {
-      const path = shortenPath(getToolPathArg(args));
+      const path = shortenPathRelative(getToolPathArg(args), context?.cwd);
+      const oneLine = oneLineCall(context, theme, "Edit", path || "...");
+      if (oneLine) return oneLine;
       const lineCount = getEditLineCount(args);
       syncToolStatus(context);
-      const summaryText = toolHeader("Edit", `${path || "..."}${formatLineCountSuffix(lineCount, theme)}`, theme, context);
+      const summaryText = toolHeader("Edit", `${verbTarget("Edit", path || "...")}${formatLineCountSuffix(lineCount, theme)}`, theme, context);
       if (!context.argsComplete || !context.isPartial) {
         return styledText(context, summaryText);
       }
@@ -1528,19 +1624,31 @@ export function registerToolDisplayOverrides(
       }
 
       const fallbackText = extractTextOutput(result);
+      const path = shortenPathRelative(getToolPathArg(context?.args), context?.cwd);
       if (isToolError(result, context)) {
         const error = fallbackText || "Edit failed.";
         setToolResultStatus(context, true);
+        if (!options.expanded) return oneLineSummary(context, theme, "Edit", path || "...", "failed");
         return branchText(context, theme.fg("error", error));
       }
       setToolResultStatus(context, false);
 
       const config = getConfig();
       const details = result.details as EditToolDetails | undefined;
+      if (!options.expanded) {
+        const summary = summarizeEditDiffChanges(details);
+        return oneLineSummary(
+          context,
+          theme,
+          "Edit",
+          path || "...",
+          summary ? formatChangeMetric(summary.added, summary.removed) : "done",
+        );
+      }
       return renderEditDiffResult(
         details,
         { expanded: options.expanded, filePath: getToolPathArg(context?.args) },
-        config,
+        { ...config, diffViewMode: "unified", diffIndicatorMode: "classic" },
         theme,
         fallbackText,
       );
@@ -1569,7 +1677,9 @@ export function registerToolDisplayOverrides(
       const content = getToolContentArg(args);
       const lineCount = countWriteContentLines(content);
       const sizeBytes = getWriteContentSizeBytes(content);
-      const path = shortenPath(getToolPathArg(args));
+      const path = shortenPathRelative(getToolPathArg(args), context?.cwd);
+      const oneLine = oneLineCall(context, theme, "Write", path || "...");
+      if (oneLine) return oneLine;
       const suffix = shouldRenderWriteCallSummary({
         hasContent: content !== undefined,
         hasDetailedResultHeader: false,
@@ -1577,7 +1687,7 @@ export function registerToolDisplayOverrides(
         ? formatWriteCallSuffix(lineCount, sizeBytes, theme)
         : "";
       syncToolStatus(context);
-      const summaryText = toolHeader("Write", `${path || "..."}${suffix}`, theme, context);
+      const summaryText = toolHeader("Write", `${verbTarget("Write", path || "...")}${suffix}`, theme, context);
       if (!context.argsComplete || !context.isPartial) {
         return styledText(context, summaryText);
       }
@@ -1599,9 +1709,11 @@ export function registerToolDisplayOverrides(
       }
 
       const fallbackText = extractTextOutput(result);
+      const path = shortenPathRelative(getToolPathArg(context?.args), context?.cwd);
       if (isToolError(result, context)) {
         const error = fallbackText || "Write failed.";
         setToolResultStatus(context, true);
+        if (!options.expanded) return oneLineSummary(context, theme, "Write", path || "...", "failed");
         return branchText(context, theme.fg("error", error));
       }
       setToolResultStatus(context, false);
@@ -1611,6 +1723,17 @@ export function registerToolDisplayOverrides(
         context,
         writeExecutionMetaByToolCallId,
       );
+      if (!options.expanded) {
+        const summary = summarizeWriteDiffChanges(
+          content,
+          executionMeta?.previousContent,
+          executionMeta?.fileExistedBeforeWrite ?? false,
+        );
+        const metric = executionMeta?.fileExistedBeforeWrite
+          ? (summary ? formatChangeMetric(summary.added, summary.removed) : "done")
+          : `${lineCount} ${pluralize(lineCount, "line")}`;
+        return oneLineSummary(context, theme, "Write", path || "...", metric);
+      }
       return renderWriteDiffResult(
         content,
         {
@@ -1619,7 +1742,7 @@ export function registerToolDisplayOverrides(
           previousContent: executionMeta?.previousContent,
           fileExistedBeforeWrite: executionMeta?.fileExistedBeforeWrite ?? false,
         },
-        config,
+        { ...config, diffViewMode: "unified", diffIndicatorMode: "classic" },
         theme,
         fallbackText,
       );
@@ -1642,10 +1765,10 @@ export function registerToolDisplayOverrides(
       const command = getStringField(args, "command") ?? "";
       const flattened = command.replace(/\\\s*\n/g, " ").replace(/\s+/g, " ").trim();
       if (context?.expanded) {
-        const header = toolHeader("Bash", "", theme, context).replace(/\s+$/, "");
+        const header = toolHeader("Bash", verbTarget("Bash", flattened || "..."), theme, context).replace(/\s+$/, "");
         const lines = command.split("\n");
         if (lines.length <= 1) {
-          return styledText(context, `${header} ${flattened}`);
+          return styledText(context, header);
         }
         const TOOL_RULE = "\x1b[38;5;238m";
         const RESET = "\x1b[0m";
@@ -1678,14 +1801,12 @@ export function registerToolDisplayOverrides(
 
       if (!options.expanded) {
         setToolResultStatus(context, false);
-        const bashResult = lines.length === 0
-          ? { text: formatBashNoOutputLine(getStringField(context?.args, "command"), theme), truncated: false }
-          : formatBashSummary(lines, details, theme, config.showTruncationHints);
-        let summary = bashResult.text;
-        if (config.showTruncationHints) {
-          summary += formatBashTruncationHints(details, theme).replace(/^\n/, " • ");
-        }
-        return renderCollapsedSummary(context, config, summary, theme);
+        const command = getStringField(context?.args, "command") ?? "";
+        const noOutputSentinel = lines.length === 1 && /^\(?no output\)?$/i.test(lines[0]?.trim() ?? "");
+        const metric = lines.length === 0 || noOutputSentinel
+          ? (isLikelyQuietCommand(command) ? "done" : "no output")
+          : `${lines.length} ${pluralize(lines.length, "line")}`;
+        return dynamicBashResult(context, command, metric, theme);
       }
 
       if (lines.length === 0) {

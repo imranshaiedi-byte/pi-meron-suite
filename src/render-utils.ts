@@ -93,6 +93,27 @@ export function shortenPath(inputPath: string | undefined): string {
     : inputPath;
 }
 
+// Prefer a path relative to the working directory; fall back to ~ shortening.
+export function shortenPathRelative(
+  inputPath: string | undefined,
+  cwd?: string,
+): string {
+  if (!inputPath) {
+    return "";
+  }
+  const norm = inputPath.replace(/\\/g, "/");
+  if (cwd) {
+    const base = cwd.replace(/\\/g, "/").replace(/\/+$/, "");
+    if (norm === base) {
+      return ".";
+    }
+    if (norm.startsWith(`${base}/`)) {
+      return norm.slice(base.length + 1);
+    }
+  }
+  return shortenPath(inputPath);
+}
+
 export function extractTextOutput(result: ToolResultLike): string {
   const rawBlocks = Array.isArray(result.content) ? result.content : [];
   const blocks = rawBlocks.filter(

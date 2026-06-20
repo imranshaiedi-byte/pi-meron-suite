@@ -2527,3 +2527,39 @@ export function renderWriteDiffResult(
 		},
 	};
 }
+
+export interface DiffChangeSummary {
+	added: number;
+	removed: number;
+}
+
+export function summarizeEditDiffChanges(details: unknown): DiffChangeSummary | undefined {
+	const diffText = safeGetDiff(details);
+	if (!diffText.trim()) {
+		return undefined;
+	}
+	try {
+		const parsed = parseDiff(diffText);
+		return { added: parsed.stats.added, removed: parsed.stats.removed };
+	} catch {
+		return undefined;
+	}
+}
+
+export function summarizeWriteDiffChanges(
+	content: string | undefined,
+	previousContent: string | undefined,
+	fileExistedBeforeWrite: boolean,
+): DiffChangeSummary | undefined {
+	if (typeof content !== "string") {
+		return undefined;
+	}
+	const nextLines = splitWriteContentLines(content);
+	if (!fileExistedBeforeWrite || typeof previousContent !== "string") {
+		return { added: nextLines.length, removed: 0 };
+	}
+	const previousLines = splitWriteContentLines(previousContent);
+	const entries = buildWriteOverwriteEntries(previousLines, nextLines);
+	const data = buildWriteDiffData(entries);
+	return { added: data.stats.added, removed: data.stats.removed };
+}
