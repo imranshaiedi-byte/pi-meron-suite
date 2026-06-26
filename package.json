@@ -5,7 +5,7 @@
   "type": "module",
   "pi": {
     "extensions": ["./index.ts"],
-    "themes": ["./themes"]
+    "themes": []
   },
   "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar", "theme"],
   "dependencies": {
