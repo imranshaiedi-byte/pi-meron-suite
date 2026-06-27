@@ -2,11 +2,13 @@
   "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
   "name": "grayscale-brutal",
   "vars": {
-    "void": "#000000",
-    "abyss": "#060606",
-    "deep": "#0a0a0a",
-    "dark": "#111111",
-    "raised": "#181818",
+    "pageBg": "#000000",
+    "abyss": "#0a0a0a",
+    "trench": "#141414",
+    "deep": "#1e1e1e",
+    "raised": "#282828",
+    "card": "#323232",
+    "highlight": "#404040",
     "white": "#ffffff",
     "snow": "#f0f0f0",
     "chalk": "#cccccc",
@@ -27,15 +29,15 @@
     "text": "white",
     "thinkingText": "stone",
 
-    "selectedBg": "dark",
-    "userMessageBg": "deep",
+    "selectedBg": "highlight",
+    "userMessageBg": "card",
     "userMessageText": "white",
     "customMessageBg": "raised",
     "customMessageText": "white",
     "customMessageLabel": "white",
     "toolPendingBg": "abyss",
-    "toolSuccessBg": "deep",
-    "toolErrorBg": "dark",
+    "toolSuccessBg": "trench",
+    "toolErrorBg": "deep",
     "toolTitle": "white",
     "toolOutput": "chalk",
 
@@ -74,8 +76,8 @@
     "bashMode": "white"
   },
   "export": {
-    "pageBg": "void",
+    "pageBg": "pageBg",
     "cardBg": "abyss",
-    "infoBg": "deep"
+    "infoBg": "trench"
   }
 }
