@@ -1,11 +1,11 @@
 {
   "name": "pi-meron-suite",
   "version": "1.5.0",
-  "description": "Meron suite — footer and grayscale-v5 theme for pi",
+  "description": "Meron suite — footer and grayscale theme for pi",
   "type": "module",
   "pi": {
     "extensions": ["./index.ts"],
-    "themes": []
+    "themes": ["./themes"]
   },
   "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar", "theme"],
   "dependencies": {
