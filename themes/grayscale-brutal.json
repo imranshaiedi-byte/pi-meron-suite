@@ -1,0 +1,81 @@
+{
+  "$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+  "name": "grayscale-brutal",
+  "vars": {
+    "void": "#000000",
+    "abyss": "#060606",
+    "deep": "#0a0a0a",
+    "dark": "#111111",
+    "raised": "#181818",
+    "white": "#ffffff",
+    "snow": "#f0f0f0",
+    "chalk": "#cccccc",
+    "stone": "#888888",
+    "ash": "#555555",
+    "charcoal": "#333333"
+  },
+  "colors": {
+    "accent": "white",
+    "border": "stone",
+    "borderAccent": "white",
+    "borderMuted": "charcoal",
+    "success": "snow",
+    "error": "white",
+    "warning": "chalk",
+    "muted": "stone",
+    "dim": "ash",
+    "text": "white",
+    "thinkingText": "stone",
+
+    "selectedBg": "dark",
+    "userMessageBg": "deep",
+    "userMessageText": "white",
+    "customMessageBg": "raised",
+    "customMessageText": "white",
+    "customMessageLabel": "white",
+    "toolPendingBg": "abyss",
+    "toolSuccessBg": "deep",
+    "toolErrorBg": "dark",
+    "toolTitle": "white",
+    "toolOutput": "chalk",
+
+    "mdHeading": "white",
+    "mdLink": "snow",
+    "mdLinkUrl": "ash",
+    "mdCode": "white",
+    "mdCodeBlock": "chalk",
+    "mdCodeBlockBorder": "stone",
+    "mdQuote": "stone",
+    "mdQuoteBorder": "charcoal",
+    "mdHr": "charcoal",
+    "mdListBullet": "white",
+
+    "toolDiffAdded": "#00ff00",
+    "toolDiffRemoved": "#ff0000",
+    "toolDiffContext": "stone",
+
+    "syntaxComment": "#888888",
+    "syntaxKeyword": "#ffffff",
+    "syntaxFunction": "#f0f0f0",
+    "syntaxVariable": "#e0e0e0",
+    "syntaxString": "#cccccc",
+    "syntaxNumber": "#dddddd",
+    "syntaxType": "#f5f5f5",
+    "syntaxOperator": "#e8e8e8",
+    "syntaxPunctuation": "#999999",
+
+    "thinkingOff": "charcoal",
+    "thinkingMinimal": "ash",
+    "thinkingLow": "stone",
+    "thinkingMedium": "chalk",
+    "thinkingHigh": "snow",
+    "thinkingXhigh": "white",
+
+    "bashMode": "white"
+  },
+  "export": {
+    "pageBg": "void",
+    "cardBg": "abyss",
+    "infoBg": "deep"
+  }
+}
