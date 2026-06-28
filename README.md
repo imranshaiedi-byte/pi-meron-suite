@@ -1,6 +1,6 @@
 # pi-meron-suite
 
-A pi extension providing a clean footer/status bar with the grayscale theme.
+A pi extension providing a clean footer/status bar with grayscale themes.
 
 ## Features
 
@@ -9,8 +9,12 @@ Clean padded footer/status bar showing:
 - Current working directory, session name, and git branch
 - Model provider/id, thinking level, context usage, session cost, and cache hit rate
 
-### Theme
-Includes the `grayscale` theme for consistent styling. The UI is grayscale, while diffs keep standard green additions and red removals.
+### Themes
+Includes grayscale themes for consistent styling. The UI is grayscale, while diffs keep standard green additions and red removals.
+
+- `grayscale` — balanced monochrome baseline
+- `grayscale-brutal` — sharper, darker, higher-contrast variant
+- `grayscale-best` — recommended UX-tuned variant with clear Pi component separation
 
 ## Installation
 
@@ -24,11 +28,11 @@ Then restart your pi session.
 
 The extension loads automatically on session start.
 
-To use the theme, select `grayscale` in `/settings` or set:
+To use a theme, select it in `/settings` or set:
 
 ```json
 {
-  "theme": "grayscale"
+  "theme": "grayscale-best"
 }
 ```
 
