@@ -16,6 +16,7 @@ Includes cohesive dark themes for consistent styling. Diffs keep standard green 
 - `midnight-slate` — recommended calm blue/slate theme for long coding sessions
 - `carbon-mint` — charcoal monochrome base with a restrained mint accent
 - `ember-night` — warm dark theme with amber/orange emphasis
+- `graphite-ui` — useful grayscale dark theme with clear brightness hierarchy
 
 ## Installation
 
