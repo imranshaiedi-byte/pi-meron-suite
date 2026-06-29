@@ -15,8 +15,8 @@
     "accent": "#cfcfcf",
     "bright": "#f0f0f0",
     "soft": "#b8b8b8",
-    "success": "#8fe388",
-    "error": "#f07178"
+    "success": "#9af08f",
+    "error": "#ff7b82"
   },
   "colors": {
     "accent": "accent",
@@ -38,8 +38,8 @@
     "customMessageText": "text",
     "customMessageLabel": "accent",
     "toolPendingBg": "surface",
-    "toolSuccessBg": "#1e2a1e",
-    "toolErrorBg": "#2a1e1e",
+    "toolSuccessBg": "#1f2f1f",
+    "toolErrorBg": "#301f20",
     "toolTitle": "bright",
     "toolOutput": "text",
 
