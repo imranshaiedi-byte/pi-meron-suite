@@ -1,16 +1,15 @@
 {
   "name": "pi-meron-suite",
   "version": "1.5.0",
-  "description": "Meron suite — footer and grayscale theme for pi",
+  "description": "Meron suite — footer for pi",
   "type": "module",
   "pi": {
-    "extensions": ["./index.ts"],
-    "themes": ["./themes"]
+    "extensions": ["./index.ts"]
   },
-  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar", "theme"],
+  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar"],
   "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.75.4",
     "@earendil-works/pi-tui": "^0.75.4"
   },
-  "files": ["index.ts", "src", "themes"]
+  "files": ["index.ts", "src"]
 }
