@@ -4,8 +4,8 @@
   "vars": {
     "bg": "#111111",
     "surface": "#181818",
-    "surfaceAlt": "#202020",
-    "surfaceRaised": "#252525",
+    "surfaceAlt": "#242424",
+    "surfaceRaised": "#2a2a2a",
     "selected": "#2a2a2a",
     "border": "#3a3a3a",
     "borderMuted": "#2b2b2b",
@@ -32,8 +32,8 @@
     "thinkingText": "muted",
 
     "selectedBg": "selected",
-    "userMessageBg": "surfaceAlt",
-    "userMessageText": "text",
+    "userMessageBg": "#2d2d2d",
+    "userMessageText": "bright",
     "customMessageBg": "surfaceRaised",
     "customMessageText": "text",
     "customMessageLabel": "accent",
