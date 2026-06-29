@@ -10,10 +10,31 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 const LEFT_PAD = 3;
 const RIGHT_PAD = 3;
 const ASCII_ELLIPSIS = "...";
+const WHITE = "\x1b[38;2;255;255;255m";
+const RESET = "\x1b[0m";
+const THEME_KEY = Symbol.for("@earendil-works/pi-coding-agent:theme");
+const THEME_KEY_OLD = Symbol.for("@mariozechner/pi-coding-agent:theme");
 
 type Theme = {
 	fg: (name: string, value: string) => string;
 };
+
+function white(value: string): string {
+	return `${WHITE}${value}${RESET}`;
+}
+
+function whitePainter(value: string): string {
+	return white(value);
+}
+
+function patchEditorBordersWhite(): void {
+	for (const key of [THEME_KEY, THEME_KEY_OLD]) {
+		const theme = (globalThis as Record<symbol, any>)[key];
+		if (!theme || typeof theme !== "object") continue;
+		theme.getThinkingBorderColor = () => whitePainter;
+		theme.getBashModeBorderColor = () => whitePainter;
+	}
+}
 
 type FooterData = {
 	getGitBranch: () => string | null;
@@ -92,36 +113,30 @@ function calcTokenStats(ctx: any): { input: number; output: number; cacheRead: n
 	return { input, output, cacheRead, cacheWrite };
 }
 
-function renderCachePct(ctx: any, theme: Theme): string | null {
+function renderCachePct(ctx: any): string | null {
 	const stats = calcTokenStats(ctx);
 	const totalInput = stats.input + stats.cacheRead;
 	if (totalInput === 0) return null;
 
 	const hitRate = Math.round((stats.cacheRead / totalInput) * 100);
-	return theme.fg("muted", "Cache:") + " " + theme.fg("accent", `${hitRate}%`);
+	return white(`Cache: ${hitRate}%`);
 }
 
-function renderContextPct(ctx: any, theme: Theme): string | null {
+function renderContextPct(ctx: any): string | null {
 	const stats = calcTokenStats(ctx);
 	if (stats.input + stats.cacheRead === 0) return null;
 
 	const usage = ctx.getContextUsage?.();
 	const percent = typeof usage?.percent === "number" ? Math.round(usage.percent) : null;
-
-	if (percent === null) {
-		return theme.fg("muted", "Context:") + " " + theme.fg("dim", "?%");
-	}
-
-	const pctColor = percent > 90 ? "error" : percent > 70 ? "warning" : "accent";
-	return theme.fg("muted", "Context:") + " " + theme.fg(pctColor, `${percent}%`);
+	return white(`Context: ${percent === null ? "?" : percent}%`);
 }
 
-function renderCost(ctx: any, theme: Theme): string | null {
+function renderCost(ctx: any): string | null {
 	const stats = calcTokenStats(ctx);
 	if (stats.input + stats.cacheRead === 0) return null;
 
 	const cost = calcSessionCost(ctx);
-	return theme.fg("text", `$${cost.toFixed(3)}`);
+	return white(`$${cost.toFixed(3)}`);
 }
 
 function modelLabel(ctx: any): string {
@@ -139,28 +154,28 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 			render(width: number): string[] {
 				const innerWidth = Math.max(0, width - LEFT_PAD - RIGHT_PAD);
 
-				// Build left side: cwd | session | branch
-				const pipe = theme.fg("dim", " | ");
-				const cwd = theme.fg("text", compactCwd(ctx.sessionManager.getCwd()));
+				// Build left side: cwd | session | branch — all white by design.
+				const pipe = white(" | ");
+				const cwd = white(compactCwd(ctx.sessionManager.getCwd()));
 				
 				let leftSide = cwd;
 				const sessionName = ctx.sessionManager.getSessionName();
 				if (sessionName) {
-					leftSide += pipe + theme.fg("muted", sessionName);
+					leftSide += pipe + white(sessionName);
 				}
 
 				const branch = footerData.getGitBranch();
 				if (branch) {
-					leftSide += pipe + theme.fg("accent", branch);
+					leftSide += pipe + white(branch);
 				}
 
-				// Build right side: model | thinking | Context: XX% | Cache: XX% | $cost
-				const model = theme.fg("accent", modelLabel(ctx));
-				const thinking = theme.fg("muted", pi.getThinkingLevel());
-				const contextPct = renderContextPct(ctx, theme);
-				const cachePct = renderCachePct(ctx, theme);
-				const cost = renderCost(ctx, theme);
-				const costSep = theme.fg("dim", " │ ");
+				// Build right side: model | thinking | Context: XX% | Cache: XX% | $cost — all white.
+				const model = white(modelLabel(ctx));
+				const thinking = white(pi.getThinkingLevel());
+				const contextPct = renderContextPct(ctx);
+				const cachePct = renderCachePct(ctx);
+				const cost = renderCost(ctx);
+				const costSep = white(" │ ");
 				
 				const stats = [contextPct, cachePct, cost].filter(Boolean);
 				const statStr = stats.length > 0
@@ -183,6 +198,11 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 export function registerFooter(pi: ExtensionAPI) {
 	pi.on("session_start", async (_event, ctx) => {
 		if (!ctx.hasUI) return;
+		patchEditorBordersWhite();
 		setPaddedFooter(pi, ctx);
+	});
+
+	pi.on("thinking_level_select", async () => {
+		patchEditorBordersWhite();
 	});
 }
