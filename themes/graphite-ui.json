@@ -37,9 +37,9 @@
     "customMessageBg": "surfaceRaised",
     "customMessageText": "text",
     "customMessageLabel": "accent",
-    "toolPendingBg": "#262626",
-    "toolSuccessBg": "#262626",
-    "toolErrorBg": "#262626",
+    "toolPendingBg": "#2d2d2d",
+    "toolSuccessBg": "#2d2d2d",
+    "toolErrorBg": "#2d2d2d",
     "toolTitle": "bright",
     "toolOutput": "text",
 
