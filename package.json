@@ -1,13 +1,13 @@
 {
   "name": "pi-meron-suite",
   "version": "1.5.0",
-  "description": "Meron suite — footer and dark-vibrant theme for pi",
+  "description": "Meron suite — footer and coherent dark themes for pi",
   "type": "module",
   "pi": {
     "extensions": ["./index.ts"],
     "themes": ["./themes"]
   },
-  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar", "theme", "dark-vibrant"],
+  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar", "theme", "dark-vibrant", "midnight-slate", "carbon-mint", "ember-night"],
   "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.75.4",
     "@earendil-works/pi-tui": "^0.75.4"

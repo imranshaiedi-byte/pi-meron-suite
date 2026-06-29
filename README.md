@@ -1,6 +1,6 @@
 # pi-meron-suite
 
-A pi extension providing a clean footer/status bar with grayscale themes.
+A pi extension providing a clean footer/status bar with coherent dark themes.
 
 ## Features
 
@@ -10,11 +10,12 @@ Clean padded footer/status bar showing:
 - Model provider/id, thinking level, context usage, session cost, and cache hit rate
 
 ### Themes
-Includes grayscale themes for consistent styling. The UI is grayscale, while diffs keep standard green additions and red removals.
+Includes cohesive dark themes for consistent styling. Diffs keep standard green additions and red removals.
 
-- `grayscale` — balanced monochrome baseline
-- `grayscale-brutal` — sharper, darker, higher-contrast variant
-- `grayscale-best` — recommended UX-tuned variant with clear Pi component separation
+- `dark-vibrant` — existing high-saturation dark theme
+- `midnight-slate` — recommended calm blue/slate theme for long coding sessions
+- `carbon-mint` — charcoal monochrome base with a restrained mint accent
+- `ember-night` — warm dark theme with amber/orange emphasis
 
 ## Installation
 
@@ -32,7 +33,7 @@ To use a theme, select it in `/settings` or set:
 
 ```json
 {
-  "theme": "grayscale-best"
+  "theme": "midnight-slate"
 }
 ```
 
