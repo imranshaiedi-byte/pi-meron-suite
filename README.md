@@ -17,6 +17,7 @@ Includes cohesive dark themes for consistent styling. Diffs keep standard green 
 - `carbon-mint` — charcoal monochrome base with a restrained mint accent
 - `ember-night` — warm dark theme with amber/orange emphasis
 - `graphite-ui` — useful grayscale dark theme with clear brightness hierarchy
+- `one-dark` — Atom One Dark inspired theme using the classic One Dark palette
 
 ## Installation
 
