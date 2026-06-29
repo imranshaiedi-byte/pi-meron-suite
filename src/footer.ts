@@ -10,31 +10,6 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 const LEFT_PAD = 3;
 const RIGHT_PAD = 3;
 const ASCII_ELLIPSIS = "...";
-const WHITE = "\x1b[38;2;255;255;255m";
-const RESET = "\x1b[0m";
-const THEME_KEY = Symbol.for("@earendil-works/pi-coding-agent:theme");
-const THEME_KEY_OLD = Symbol.for("@mariozechner/pi-coding-agent:theme");
-
-type Theme = {
-	fg: (name: string, value: string) => string;
-};
-
-function white(value: string): string {
-	return `${WHITE}${value}${RESET}`;
-}
-
-function whitePainter(value: string): string {
-	return white(value);
-}
-
-function patchEditorBordersWhite(): void {
-	for (const key of [THEME_KEY, THEME_KEY_OLD]) {
-		const theme = (globalThis as Record<symbol, any>)[key];
-		if (!theme || typeof theme !== "object") continue;
-		theme.getThinkingBorderColor = () => whitePainter;
-		theme.getBashModeBorderColor = () => whitePainter;
-	}
-}
 
 type FooterData = {
 	getGitBranch: () => string | null;
@@ -119,7 +94,7 @@ function renderCachePct(ctx: any): string | null {
 	if (totalInput === 0) return null;
 
 	const hitRate = Math.round((stats.cacheRead / totalInput) * 100);
-	return white(`Cache: ${hitRate}%`);
+	return `Cache: ${hitRate}%`;
 }
 
 function renderContextPct(ctx: any): string | null {
@@ -128,7 +103,7 @@ function renderContextPct(ctx: any): string | null {
 
 	const usage = ctx.getContextUsage?.();
 	const percent = typeof usage?.percent === "number" ? Math.round(usage.percent) : null;
-	return white(`Context: ${percent === null ? "?" : percent}%`);
+	return `Context: ${percent === null ? "?" : percent}%`;
 }
 
 function renderCost(ctx: any): string | null {
@@ -136,7 +111,7 @@ function renderCost(ctx: any): string | null {
 	if (stats.input + stats.cacheRead === 0) return null;
 
 	const cost = calcSessionCost(ctx);
-	return white(`$${cost.toFixed(3)}`);
+	return `$${cost.toFixed(3)}`;
 }
 
 function modelLabel(ctx: any): string {
@@ -144,7 +119,7 @@ function modelLabel(ctx: any): string {
 }
 
 function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
-	ctx.ui.setFooter((tui: any, theme: Theme, footerData: FooterData) => {
+	ctx.ui.setFooter((tui: any, _theme: unknown, footerData: FooterData) => {
 		const disposers = [footerData.onBranchChange(() => tui.requestRender())];
 		return {
 			dispose: () => {
@@ -154,28 +129,28 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 			render(width: number): string[] {
 				const innerWidth = Math.max(0, width - LEFT_PAD - RIGHT_PAD);
 
-				// Build left side: cwd | session | branch — all white by design.
-				const pipe = white(" | ");
-				const cwd = white(compactCwd(ctx.sessionManager.getCwd()));
+				// Build left side: cwd | session | branch. Keep this unstyled so the active theme controls color.
+				const pipe = " | ";
+				const cwd = compactCwd(ctx.sessionManager.getCwd());
 				
 				let leftSide = cwd;
 				const sessionName = ctx.sessionManager.getSessionName();
 				if (sessionName) {
-					leftSide += pipe + white(sessionName);
+					leftSide += pipe + sessionName;
 				}
 
 				const branch = footerData.getGitBranch();
 				if (branch) {
-					leftSide += pipe + white(branch);
+					leftSide += pipe + branch;
 				}
 
-				// Build right side: model | thinking | Context: XX% | Cache: XX% | $cost — all white.
-				const model = white(modelLabel(ctx));
-				const thinking = white(pi.getThinkingLevel());
+				// Build right side: model | thinking | Context: XX% | Cache: XX% | $cost.
+				const model = modelLabel(ctx);
+				const thinking = pi.getThinkingLevel();
 				const contextPct = renderContextPct(ctx);
 				const cachePct = renderCachePct(ctx);
 				const cost = renderCost(ctx);
-				const costSep = white(" │ ");
+				const costSep = " │ ";
 				
 				const stats = [contextPct, cachePct, cost].filter(Boolean);
 				const statStr = stats.length > 0
@@ -198,11 +173,6 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 export function registerFooter(pi: ExtensionAPI) {
 	pi.on("session_start", async (_event, ctx) => {
 		if (!ctx.hasUI) return;
-		patchEditorBordersWhite();
 		setPaddedFooter(pi, ctx);
-	});
-
-	pi.on("thinking_level_select", async () => {
-		patchEditorBordersWhite();
 	});
 }
