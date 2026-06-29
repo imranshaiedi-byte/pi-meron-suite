@@ -15,16 +15,16 @@
     "accent": "#cfcfcf",
     "bright": "#f0f0f0",
     "soft": "#b8b8b8",
-    "success": "#7fc97f",
-    "error": "#e06c75"
+    "success": "#8fe388",
+    "error": "#f07178"
   },
   "colors": {
     "accent": "accent",
     "border": "border",
     "borderAccent": "accent",
     "borderMuted": "borderMuted",
-    "success": "soft",
-    "error": "bright",
+    "success": "success",
+    "error": "error",
     "warning": "soft",
     "muted": "muted",
     "dim": "dim",
@@ -38,8 +38,8 @@
     "customMessageText": "text",
     "customMessageLabel": "accent",
     "toolPendingBg": "surface",
-    "toolSuccessBg": "#1d211d",
-    "toolErrorBg": "#211d1d",
+    "toolSuccessBg": "#1e2a1e",
+    "toolErrorBg": "#2a1e1e",
     "toolTitle": "bright",
     "toolOutput": "text",
 
