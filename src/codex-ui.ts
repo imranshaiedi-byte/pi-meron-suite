@@ -180,7 +180,6 @@ function setupCodexChrome(pi: ExtensionAPI, ctx: any): void {
 				const cache = renderCachePct(ctx);
 				const cost = renderCost(ctx);
 
-				const left = theme.fg("dim", "? for shortcuts");
 				const right = [
 					model,
 					thinking,
@@ -193,8 +192,8 @@ function setupCodexChrome(pi: ExtensionAPI, ctx: any): void {
 					.join(theme.fg("dim", " · "));
 
 				const rightStyled = theme.fg("dim", right);
-				const gap = " ".repeat(Math.max(1, width - visibleWidth(left) - visibleWidth(rightStyled) - 2));
-				return [truncateToWidth(` ${left}${gap}${rightStyled} `, width, "")];
+				const gap = " ".repeat(Math.max(0, width - visibleWidth(rightStyled) - 1));
+				return [truncateToWidth(`${gap}${rightStyled} `, width, "")];
 			},
 		};
 	});

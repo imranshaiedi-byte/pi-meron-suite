@@ -13,7 +13,6 @@ A pi extension providing Codex-style TUI rendering, a clean status/footer bar, a
 
 ### Footer
 Codex-style footer/status line showing:
-- Shortcut hint
 - Model, thinking level, git branch
 - Context usage, cache hit rate, and session cost when available
 
