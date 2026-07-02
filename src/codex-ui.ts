@@ -251,7 +251,7 @@ function setupCodexChrome(pi: ExtensionAPI, ctx: any): void {
 
 				const rightStyled = theme.fg("dim", right);
 				const gap = " ".repeat(Math.max(0, width - visibleWidth(rightStyled) - 1));
-				return [truncateToWidth(`${gap}${rightStyled} `, width, "")];
+				return [truncateToWidth(`${gap}${rightStyled} `, width, ""), ""];
 			},
 		};
 	});
