@@ -69,14 +69,14 @@
     "syntaxOperator": "muted",
     "syntaxPunctuation": "muted",
 
-    "thinkingOff": "borderMuted",
-    "thinkingMinimal": "muted",
-    "thinkingLow": "accent",
-    "thinkingMedium": "cyan",
-    "thinkingHigh": "purple",
-    "thinkingXhigh": "red",
+    "thinkingOff": "text",
+    "thinkingMinimal": "text",
+    "thinkingLow": "text",
+    "thinkingMedium": "text",
+    "thinkingHigh": "text",
+    "thinkingXhigh": "text",
 
-    "bashMode": "yellow"
+    "bashMode": "text"
   },
   "export": {
     "pageBg": "#0d1117",

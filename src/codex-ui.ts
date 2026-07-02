@@ -1,4 +1,5 @@
 import {
+	AssistantMessageComponent,
 	type ExtensionAPI,
 	type Theme,
 	ToolExecutionComponent,
@@ -8,7 +9,7 @@ import {
 	keyHint,
 	renderDiff,
 } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth, wrapTextWithAnsi, type Component } from "@earendil-works/pi-tui";
+import { Editor, truncateToWidth, visibleWidth, wrapTextWithAnsi, type Component } from "@earendil-works/pi-tui";
 
 /**
  * Codex-style TUI skin.
@@ -31,13 +32,19 @@ type CodexPatchState = {
 	installed: boolean;
 	enabled: boolean;
 	renderers: Record<string, ToolRenderer>;
+	toolPatchInstalled?: boolean;
+	assistantPatchInstalled?: boolean;
+	editorPatchInstalled?: boolean;
 	originalGetCallRenderer?: (this: any) => any;
 	originalGetResultRenderer?: (this: any) => any;
 	originalGetRenderShell?: (this: any) => any;
+	originalAssistantUpdateContent?: (this: any, message: any) => void;
+	originalEditorRender?: (this: any, width: number) => string[];
 };
 
 const PATCH_KEY = Symbol.for("pi-meron-suite.codex-tool-rendering");
 const EMPTY_COMPONENT: Component = { render: () => [], invalidate() {} };
+const FIXED_EDITOR_BORDER = (text: string) => `\x1b[38;2;255;255;255m${text}\x1b[39m`;
 const TOOL_OUTPUT_MAX_LINES = 5;
 const DIFF_OUTPUT_MAX_LINES = 10;
 
@@ -95,12 +102,60 @@ class CodexHeader implements Component {
 	invalidate(): void {}
 }
 
+function installHiddenThinkingPatch(state: CodexPatchState): void {
+	if (state.assistantPatchInstalled) return;
+
+	const proto = AssistantMessageComponent.prototype as any;
+	if (typeof proto.updateContent !== "function") return;
+
+	state.originalAssistantUpdateContent = proto.updateContent;
+	proto.updateContent = function patchedAssistantUpdateContent(this: any, message: any) {
+		const current = getPatchState();
+		const shouldDropHiddenThinking =
+			current.enabled === true &&
+			this?.hideThinkingBlock === true &&
+			this?.hiddenThinkingLabel === "" &&
+			Array.isArray(message?.content);
+
+		if (shouldDropHiddenThinking) {
+			const content = message.content.filter((block: any) => block?.type !== "thinking");
+			if (content.length !== message.content.length) {
+				return current.originalAssistantUpdateContent?.call(this, { ...message, content });
+			}
+		}
+
+		return current.originalAssistantUpdateContent?.call(this, message);
+	};
+	state.assistantPatchInstalled = true;
+}
+
+function installFixedEditorBorderPatch(state: CodexPatchState): void {
+	if (state.editorPatchInstalled) return;
+
+	const proto = Editor.prototype as any;
+	if (typeof proto.render !== "function") return;
+
+	state.originalEditorRender = proto.render;
+	proto.render = function patchedEditorRender(this: any, width: number) {
+		const current = getPatchState();
+		if (current.enabled && this && "borderColor" in this) {
+			this.borderColor = FIXED_EDITOR_BORDER;
+		}
+		return current.originalEditorRender?.call(this, width) ?? [];
+	};
+	state.editorPatchInstalled = true;
+}
+
 function installCodexToolRenderingPatch(): CodexPatchState {
 	const state = getPatchState();
 	state.renderers = CODEX_TOOL_RENDERERS;
 	state.enabled = true;
+	state.toolPatchInstalled = state.toolPatchInstalled || state.installed;
 
-	if (state.installed) return state;
+	installHiddenThinkingPatch(state);
+	installFixedEditorBorderPatch(state);
+
+	if (state.toolPatchInstalled) return state;
 
 	const proto = ToolExecutionComponent.prototype as any;
 	if (
@@ -156,6 +211,7 @@ function installCodexToolRenderingPatch(): CodexPatchState {
 		return current.originalGetRenderShell?.call(this) ?? "default";
 	};
 
+	state.toolPatchInstalled = true;
 	state.installed = true;
 	return state;
 }
