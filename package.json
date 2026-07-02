@@ -1,13 +1,13 @@
 {
   "name": "pi-meron-suite",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Meron suite — Codex-style TUI rendering, footer, and coherent dark themes for pi",
   "type": "module",
   "pi": {
     "extensions": ["./index.ts"],
     "themes": ["./themes"]
   },
-  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "codex", "tui", "tool-rendering", "footer", "status-bar", "theme", "codex-dark", "dark-vibrant", "midnight-slate", "carbon-mint", "ember-night", "graphite-ui", "one-dark"],
+  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "codex", "tui", "tool-rendering", "footer", "status-bar", "theme", "codex-dark", "codex-soft-slate", "mist-forest", "dusty-rose", "paper-dark", "dark-vibrant", "midnight-slate", "carbon-mint", "ember-night", "graphite-ui", "one-dark"],
   "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.75.4",
     "@earendil-works/pi-tui": "^0.75.4"
