@@ -165,7 +165,9 @@ function setupCodexChrome(pi: ExtensionAPI, ctx: any): void {
 
 	ctx.ui.setHeader((_tui: any, theme: Theme) => new CodexHeader(pi, ctx, theme));
 	ctx.ui.setWorkingIndicator({ frames: ["•", "∙", "·", "∙"], intervalMs: 160 });
-	ctx.ui.setHiddenThinkingLabel?.("thinking");
+	// Codex-style: when pi's "Hide thinking" setting collapses reasoning blocks,
+	// render no placeholder label at all.
+	ctx.ui.setHiddenThinkingLabel?.("");
 
 	ctx.ui.setFooter((tui: any, theme: Theme, footerData: any) => {
 		const dispose = footerData.onBranchChange?.(() => tui.requestRender()) ?? (() => {});
