@@ -1,35 +1,14 @@
 # pi-meron-suite
 
-A pi extension providing Codex-style TUI rendering, a clean status/footer bar, and coherent dark themes.
+A pi extension providing a clean status/footer bar.
 
 ## Features
 
-### Codex-style TUI
-- Re-skins tool calls into Codex-like transcript rows (`• Running`, `• Read`, `• Edited`, `└` output previews)
-- Compact output previews with expand hints for longer results
-- Diff summaries for `edit`/`write`-style file changes
-- Codex-inspired startup header, working indicator, and footer/status line
-- Renderer patch is visual-only: it does not replace built-in tool execution
-
 ### Footer
 Codex-style footer/status line showing:
-- Model, thinking level, git branch
-- Context usage, cache hit rate, and session cost when available
-
-### Themes
-Includes cohesive dark themes for consistent styling. Diffs keep standard green additions and red removals.
-
-- `codex-dark` — Codex/GitHub-dark inspired palette for the Codex-style renderer
-- `codex-soft-slate` — soft blue/slate Codex variant; calm but still colorful
-- `mist-forest` — earthy green-gray palette with gentle functional colors
-- `dusty-rose` — warm muted rose/purple palette for less sterile sessions
-- `paper-dark` — lowest-aggression dark palette with restrained color accents
-- `dark-vibrant` — existing high-saturation dark theme
-- `midnight-slate` — recommended calm blue/slate theme for long coding sessions
-- `carbon-mint` — charcoal monochrome base with a restrained mint accent
-- `ember-night` — warm dark theme with amber/orange emphasis
-- `graphite-ui` — useful grayscale dark theme with clear brightness hierarchy
-- `one-dark` — Atom One Dark inspired theme using the classic One Dark palette
+- Current working directory, session name, git branch (left side)
+- Model, thinking level, context usage, cache hit rate, and session cost (right side)
+- Responsive layout: collapses to two rows on narrow terminals
 
 ## Installation
 
@@ -41,19 +20,7 @@ Then restart your pi session or run `/reload`.
 
 ## Usage
 
-The extension loads automatically on session start.
-
-For the closest Codex-like look, select the theme in `/settings` or set:
-
-```json
-{
-  "theme": "codex-dark"
-}
-```
-
-## Notes
-
-pi does not currently expose a public renderer-only hook for all built-in tool rows. This suite patches pi's TUI `ToolExecutionComponent` renderer lookup at runtime so execution remains untouched while rendering changes.
+The extension loads automatically on session start. The footer appears at the bottom of the TUI with session and model info.
 
 ## License
 
