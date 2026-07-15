@@ -1,27 +1,26 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { CustomEditor } from "@earendil-works/pi-coding-agent";
 import { registerFooter } from "./src/footer.js";
 
-const WHITE_BORDER = (s: string) => `\x1b[37m${s}\x1b[0m`;
+const MERON_THEME = "meron";
 
 export default function meronSuite(pi: ExtensionAPI): void {
   registerFooter(pi);
 
-  // Force editor border to pure white (instead of thinking-level colors)
+  // Editor border color is driven by theme tokens (thinking* / bashMode).
+  // The meron theme sets those to truecolor #ffffff, so Pi's own
+  // updateEditorBorderColor() keeps the border pure white — no property hacks.
+  //
+  // Apply as a Theme instance (not by name) so we don't rewrite settings.json.
   pi.on("session_start", async (_event, ctx) => {
     if (!ctx.hasUI) return;
+    if (ctx.ui.theme?.name === MERON_THEME) return;
 
-    ctx.ui.setEditorComponent((tui, theme, keybindings) => {
-      const editor = new CustomEditor(tui, theme, keybindings);
-      // Lock borderColor to pure white — ignore any later changes
-      // from updateEditorBorderColor() (thinking level / bash mode)
-      Object.defineProperty(editor, "borderColor", {
-        get: () => WHITE_BORDER,
-        set: () => {},
-        configurable: true,
-        enumerable: true,
-      });
-      return editor;
-    });
+    const meron = ctx.ui.getTheme(MERON_THEME);
+    if (!meron) return;
+
+    const result = ctx.ui.setTheme(meron);
+    if (!result.success) {
+      ctx.ui.notify(`Meron theme failed to load: ${result.error ?? "unknown error"}`, "error");
+    }
   });
 }

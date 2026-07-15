@@ -1,70 +1,87 @@
 /**
  * Footer Extension
  *
- * Adds a clean padded footer/status bar for pi with pure white text.
+ * Clean padded footer/status bar. Colors come from Pi's theme API
+ * (`theme.fg(...)`) so pure white is truecolor `#ffffff` via the meron theme.
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  ReadonlyFooterDataProvider,
+  Theme,
+} from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 const LEFT_PAD = 3;
 const RIGHT_PAD = 3;
 const ASCII_ELLIPSIS = "...";
-const WHITE = "\x1b[37m";
-const RESET = "\x1b[0m";
 
-function white(text: string): string {
-  return `${WHITE}${text}${RESET}`;
+function paint(theme: Theme, line: string): string {
+  return theme.fg("text", line);
 }
 
-type FooterData = {
-  getGitBranch: () => string | null;
-  onBranchChange: (listener: () => void) => () => void;
-};
-
-function padLine(line: string, width: number, innerWidth: number): string {
+function padLine(theme: Theme, line: string, width: number, innerWidth: number): string {
   if (width <= 0) return "";
 
   const lineWidth = visibleWidth(line);
   if (lineWidth <= innerWidth) {
-    return white(
+    return paint(
+      theme,
       `${" ".repeat(LEFT_PAD)}${line}${" ".repeat(Math.max(0, width - LEFT_PAD - lineWidth))}`,
     );
   }
 
-  return white(truncateToWidth(line, width, ASCII_ELLIPSIS));
+  return paint(theme, truncateToWidth(line, width, ASCII_ELLIPSIS));
 }
 
-function twoColumnLine(left: string, right: string, width: number, innerWidth: number): string {
+function twoColumnLine(
+  theme: Theme,
+  left: string,
+  right: string,
+  width: number,
+  innerWidth: number,
+): string {
   const leftWidth = visibleWidth(left);
   const rightWidth = visibleWidth(right);
 
   if (leftWidth + rightWidth + 2 <= innerWidth) {
-    return padLine(`${left}${" ".repeat(innerWidth - leftWidth - rightWidth)}${right}`, width, innerWidth);
+    return padLine(
+      theme,
+      `${left}${" ".repeat(innerWidth - leftWidth - rightWidth)}${right}`,
+      width,
+      innerWidth,
+    );
   }
 
   const leftBudget = Math.max(1, innerWidth - rightWidth - 2);
   if (leftBudget > 8) {
     const truncatedLeft = truncateToWidth(left, leftBudget, ASCII_ELLIPSIS);
     const gap = " ".repeat(Math.max(2, innerWidth - visibleWidth(truncatedLeft) - rightWidth));
-    return padLine(`${truncatedLeft}${gap}${right}`, width, innerWidth);
+    return padLine(theme, `${truncatedLeft}${gap}${right}`, width, innerWidth);
   }
 
-  return padLine(truncateToWidth(left, innerWidth, ASCII_ELLIPSIS), width, innerWidth);
+  return padLine(theme, truncateToWidth(left, innerWidth, ASCII_ELLIPSIS), width, innerWidth);
 }
 
-function responsiveFooterLines(left: string, right: string, width: number, innerWidth: number): string[] {
+function responsiveFooterLines(
+  theme: Theme,
+  left: string,
+  right: string,
+  width: number,
+  innerWidth: number,
+): string[] {
   if (innerWidth <= 0) return [""];
 
   if (visibleWidth(left) + visibleWidth(right) + 2 <= innerWidth) {
-    return [twoColumnLine(left, right, width, innerWidth), white("")];
+    return [twoColumnLine(theme, left, right, width, innerWidth), paint(theme, "")];
   }
 
   // Narrow layout: use two rows instead of allowing the right side to disappear.
   return [
-    padLine(left, width, innerWidth),
-    padLine(right, width, innerWidth),
-    white(""),
+    padLine(theme, left, width, innerWidth),
+    padLine(theme, right, width, innerWidth),
+    paint(theme, ""),
   ];
 }
 
@@ -73,7 +90,7 @@ function compactCwd(cwd: string): string {
   return home && cwd.startsWith(home) ? `~${cwd.slice(home.length)}` : cwd;
 }
 
-function calcSessionCost(ctx: any): number {
+function calcSessionCost(ctx: ExtensionContext): number {
   let total = 0;
   for (const entry of ctx.sessionManager.getEntries()) {
     if (entry.type === "message" && entry.message.role === "assistant") {
@@ -83,7 +100,12 @@ function calcSessionCost(ctx: any): number {
   return total;
 }
 
-function calcTokenStats(ctx: any): { input: number; output: number; cacheRead: number; cacheWrite: number } {
+function calcTokenStats(ctx: ExtensionContext): {
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
+} {
   let input = 0,
     output = 0,
     cacheRead = 0,
@@ -99,7 +121,7 @@ function calcTokenStats(ctx: any): { input: number; output: number; cacheRead: n
   return { input, output, cacheRead, cacheWrite };
 }
 
-function renderCachePct(ctx: any): string | null {
+function renderCachePct(ctx: ExtensionContext): string | null {
   const stats = calcTokenStats(ctx);
   const totalInput = stats.input + stats.cacheRead;
   if (totalInput === 0) return null;
@@ -108,16 +130,16 @@ function renderCachePct(ctx: any): string | null {
   return `Cache: ${hitRate}%`;
 }
 
-function renderContextPct(ctx: any): string | null {
+function renderContextPct(ctx: ExtensionContext): string | null {
   const stats = calcTokenStats(ctx);
   if (stats.input + stats.cacheRead === 0) return null;
 
-  const usage = ctx.getContextUsage?.();
+  const usage = ctx.getContextUsage();
   const percent = typeof usage?.percent === "number" ? Math.round(usage.percent) : null;
   return `Context: ${percent === null ? "?" : percent}%`;
 }
 
-function renderCost(ctx: any): string | null {
+function renderCost(ctx: ExtensionContext): string | null {
   const stats = calcTokenStats(ctx);
   if (stats.input + stats.cacheRead === 0) return null;
 
@@ -125,12 +147,12 @@ function renderCost(ctx: any): string | null {
   return `$${cost.toFixed(3)}`;
 }
 
-function modelLabel(ctx: any): string {
+function modelLabel(ctx: ExtensionContext): string {
   return ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "no-model";
 }
 
-function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
-  ctx.ui.setFooter((tui: any, _theme: unknown, footerData: FooterData) => {
+function setPaddedFooter(pi: ExtensionAPI, ctx: ExtensionContext): void {
+  ctx.ui.setFooter((tui, theme, footerData: ReadonlyFooterDataProvider) => {
     const disposers = [footerData.onBranchChange(() => tui.requestRender())];
     return {
       dispose: () => {
@@ -171,7 +193,7 @@ function setPaddedFooter(pi: ExtensionAPI, ctx: any): void {
 
         const rightSide = `${model}${pipe}${thinking}${statStr}`;
 
-        return responsiveFooterLines(leftSide, rightSide, width, innerWidth);
+        return responsiveFooterLines(theme, leftSide, rightSide, width, innerWidth);
       },
     };
   });

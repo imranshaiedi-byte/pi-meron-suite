@@ -1,15 +1,16 @@
 {
   "name": "pi-meron-suite",
   "version": "1.7.0",
-  "description": "Meron suite — clean footer/status bar for pi",
+  "description": "Meron suite — clean footer/status bar and pure-white chrome for pi",
   "type": "module",
   "pi": {
-    "extensions": ["./index.ts"]
+    "extensions": ["./index.ts"],
+    "themes": ["./themes"]
   },
-  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar"],
+  "keywords": ["pi", "pi-agent", "pi-extension", "pi-package", "footer", "status-bar", "theme"],
   "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.75.4",
     "@earendil-works/pi-tui": "^0.75.4"
   },
-  "files": ["index.ts", "src"]
+  "files": ["index.ts", "src", "themes"]
 }
